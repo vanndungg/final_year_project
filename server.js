@@ -30,15 +30,15 @@ const swaggerOptions = {
             }
         ],
         components: {
-    securitySchemes: {
-        bearerAuth: {
-            type: 'http',
-            scheme: 'bearer',
-            bearerFormat: 'JWT',
-            description: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NjRiMzBlZjk2YjkwZmVkMjI0ZDdlZiIsImlhdCI6MTc2ODIwNzE5MywiZXhwIjoxNzY4MjkzNTkzfQ.V99amAaj1EnqrFD-h3f7ujYXIyVwOgzpuMF9w15ma04'
+            securitySchemes: {
+                bearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT',
+                    description: 'Dán mã access_token vào đây để thực hiện các quyền Admin'
+                }
+            }
         }
-    }
-}
     },
     // Trỏ đến tất cả các file trong thư mục routes để quét chú thích
     apis: ["./routes/*.js", "./server.js"],
@@ -51,6 +51,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 // --- CÁC ĐƯỜNG DẪN ROUTE ---
 app.use('/api', require('./routes/authRouter')); 
 app.use('/api', require('./routes/courseRouter')); 
+// Đăng ký thêm route cho Bài học (Lesson)
+app.use('/api', require('./routes/lessonRouter')); 
 
 const URI = process.env.MONGODB_URL;
 
