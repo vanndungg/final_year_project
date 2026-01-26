@@ -51,8 +51,11 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 // --- CÁC ĐƯỜNG DẪN ROUTE ---
 app.use('/api', require('./routes/authRouter')); 
 app.use('/api', require('./routes/courseRouter')); 
+app.use('/api', require('./routes/userRouter'));
+app.use('/api', require('./routes/progressRouter'));
 // Đăng ký thêm route cho Bài học (Lesson)
 app.use('/api', require('./routes/lessonRouter')); 
+app.use('/api', require('./routes/reviewRouter'));
 
 const URI = process.env.MONGODB_URL;
 
