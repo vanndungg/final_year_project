@@ -6,8 +6,9 @@ const auth = require('../middleware/auth');
  * @swagger
  * /api/reviews:
  *   post:
- *     summary: Gửi đánh giá cho khóa học (Chỉ người đã mua)
- *     tags: [Reviews]
+ *     summary: Gửi đánh giá cho khóa học
+ *     tags:
+ *       - Reviews
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -21,26 +22,31 @@ const auth = require('../middleware/auth');
  *                 type: string
  *               rating:
  *                 type: number
- *                 example: 5
  *               comment:
  *                 type: string
- *                 example: "Khóa học rất hay và bổ ích!"
+ *     responses:
+ *       200:
+ *         description: OK
  */
-router.post('/reviews', auth, reviewCtrl.createReview);
+router.post('/', auth, reviewCtrl.createReview);
 
 /**
  * @swagger
  * /api/reviews/{id}:
  *   get:
- *     summary: Lấy danh sách đánh giá của một khóa học
- *     tags: [Reviews]
+ *     summary: Lấy đánh giá của một khóa học (ID là Course ID)
+ *     tags:
+ *       - Reviews
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: OK
  */
-router.get('/reviews/:id', reviewCtrl.getCourseReviews);
+router.get('/:id', reviewCtrl.getCourseReviews);
 
 module.exports = router;

@@ -4,23 +4,10 @@ const auth = require('../middleware/auth');
 
 /**
  * @swagger
- * /api/info:
- *   get:
- *     summary: Lấy thông tin tài khoản đang đăng nhập
- *     tags: [User]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Trả về thông tin user và danh sách khóa học đã mua
- */
-
-/**
- * @swagger
- * /api/enroll:
+ * /api/users/enroll:
  *   patch:
  *     summary: Đăng ký khóa học mới
- *     tags: [User]
+ *     tags: [Enrollment]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -32,10 +19,21 @@ const auth = require('../middleware/auth');
  *             properties:
  *               courseId:
  *                 type: string
- *                 example: "ID_KHOA_HOC_CUA_BAN"
+ *     responses:
+ *       200:
+ *         description: Đăng ký thành công
+ * /api/users/enrolled_courses:
+ *   get:
+ *     summary: Lấy danh sách khóa học của tôi
+ *     tags: [Enrollment]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Danh sách khóa học đã đăng ký
  */
 
-router.get('/info', auth, userCtrl.getUser);
 router.patch('/enroll', auth, userCtrl.enrollCourse);
+router.get('/enrolled_courses', auth, userCtrl.getEnrolledCourses);
 
 module.exports = router;

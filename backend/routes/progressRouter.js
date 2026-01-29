@@ -22,7 +22,7 @@ const auth = require('../middleware/auth');
  *               lessonId:
  *                 type: string
  */
-router.post('/progress/mark-complete', auth, progressCtrl.markComplete);
+router.post('/mark-complete', auth, progressCtrl.markComplete);
 
 /**
  * @swagger
@@ -39,6 +39,6 @@ router.post('/progress/mark-complete', auth, progressCtrl.markComplete);
  *         schema:
  *           type: string
  */
-router.get('/progress/:courseId', auth, progressCtrl.getProgress);
+router.get('/:courseId', auth, progressCtrl.getProgress);
 
 module.exports = router;

@@ -3,13 +3,13 @@ const lessonCtrl = require('../controllers/lessonCtrl');
 const auth = require('../middleware/auth');
 const authAdmin = require('../middleware/authAdmin');
 
-/**
- * @swagger
- * tags:
- * name: Lessons
- * description: Quản lý bài học bên trong khóa học
- */
-
+// Middleware hỗ trợ: Không bắt buộc đăng nhập nhưng nếu có token thì giải mã để check quyền mua học
+const optionalAuth = (req, res, next) => {
+    const token = req.header("Authorization");
+    if(!token) return next(); 
+    // Nếu có token thì dùng middleware auth cũ để xác thực
+    auth(req, res, next);
+};
 /**
  * @swagger
  * /api/lessons:
@@ -67,7 +67,10 @@ const authAdmin = require('../middleware/authAdmin');
  *         description: Danh sách bài học
  */
 
-router.get('/:id', lessonCtrl.getLessonsByCourse);
+// Lấy bài học (Dùng optionalAuth để check xem ai đang xem)
+router.get('/:id', optionalAuth, lessonCtrl.getLessonsByCourse);
+
+// Admin thêm bài học
 router.post('/', auth, authAdmin, lessonCtrl.createLesson);
 
 module.exports = router;
