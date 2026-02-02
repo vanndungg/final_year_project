@@ -3,41 +3,40 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// Import các trang (Chúng ta sẽ tạo file Login.jsx ở bước dưới)
+// Import Components & Pages
+import Header from './components/Header';
+import Home from './pages/Home';
 import Login from './pages/Login';
+import Register from './pages/Register';
 
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
-        {/* ToastContainer giúp hiển thị thông báo pop-up đẹp mắt */}
+      <div className="min-h-screen bg-gray-50 font-sans antialiased">
         <ToastContainer 
           position="top-right"
           autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
+          theme="light"
         />
 
-        <Routes>
-          {/* Trang chủ tạm thời */}
-          <Route path="/" element={
-            <div className="flex flex-col items-center justify-center h-screen">
-              <h1 className="text-4xl font-bold text-blue-600">Chào mừng đến với E-Learning</h1>
-              <p className="mt-4 text-gray-600">Hệ thống đang được xây dựng...</p>
-              <a href="/login" className="mt-6 px-6 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition">
-                Đi tới Đăng nhập
-              </a>
-            </div>
-          } />
+        {/* Header luôn xuất hiện */}
+        <Header />
 
-          {/* Trang Đăng nhập */}
-          <Route path="/login" element={<Login />} />
-        </Routes>
+        <main>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            
+            {/* 404 Route */}
+            <Route path="*" element={
+              <div className="flex flex-col items-center justify-center h-[80vh]">
+                <h2 className="text-2xl font-bold text-gray-800">404 - Không tìm thấy trang</h2>
+                <a href="/" className="mt-4 text-blue-500 underline">Quay lại trang chủ</a>
+              </div>
+            } />
+          </Routes>
+        </main>
       </div>
     </Router>
   );

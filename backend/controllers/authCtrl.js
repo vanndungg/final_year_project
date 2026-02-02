@@ -49,7 +49,9 @@ const authCtrl = {
                 msg: "Đăng nhập thành công!",
                 access_token,
                 user: {
+                    _id: user._id,
                     name: user.name,
+                    email: user.email,
                     role: user.role
                 }
             });
