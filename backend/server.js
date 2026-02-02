@@ -8,8 +8,16 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
 const app = express();
+
+// --- CẤU HÌNH MIDDLEWARE ---
 app.use(express.json());
-app.use(cors());
+app.use(express.urlencoded({ extended: true })); // Hỗ trợ gửi data qua form
+
+// Cấu hình CORS để cho phép Frontend (Vite) truy cập
+app.use(cors({
+    origin: 'http://localhost:5173', // Địa chỉ Frontend của bạn
+    credentials: true
+}));
 
 // --- 1. CẤU HÌNH SWAGGER ---
 const swaggerOptions = {
@@ -19,28 +27,20 @@ const swaggerOptions = {
             title: 'E-Learning API Documentation',
             version: '1.0.0',
             description: 'Tài liệu API cho hệ thống học trực tuyến - Full Logic',
-            contact: {
-                name: 'Văn Dũng'
-            }
+            contact: { name: 'Văn Dũng' }
         },
-        servers: [
-            {
-                url: 'http://localhost:5000',
-                description: 'Local Server'
-            }
-        ],
+        servers: [{ url: 'http://localhost:5000', description: 'Local Server' }],
         components: {
             securitySchemes: {
                 bearerAuth: {
                     type: 'http',
                     scheme: 'bearer',
                     bearerFormat: 'JWT',
-                    description: 'Dán mã access_token vào đây để thực hiện quyền User/Admin'
+                    description: 'Dán mã access_token vào đây'
                 }
             }
         }
     },
-    // Quét tất cả các file trong thư mục routes để hiển thị lên UI
     apis: ["./routes/*.js"],
 };
 
@@ -49,30 +49,17 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // --- 2. CÁC ĐƯỜNG DẪN ROUTE (ĐÃ PHÂN TÁCH PREFIX) ---
 
-// Auth (Login/Register)
 app.use('/api', require('./routes/authRouter')); 
-
-// Khóa học
 app.use('/api/courses', require('./routes/courseRouter')); 
-
-// Người dùng (Profile/Cart/Enroll)
 app.use('/api/users', require('./routes/userRouter'));
-
-// Bài học (Lessons)
 app.use('/api/lessons', require('./routes/lessonRouter')); 
-
-// Đánh giá (Reviews)
 app.use('/api/reviews', require('./routes/reviewRouter'));
-
-// Tiến độ học tập
 app.use('/api/progress', require('./routes/progressRouter'));
 
 // --- 3. KẾT NỐI DATABASE ---
 const URI = process.env.MONGODB_URL;
 mongoose.connect(URI)
-    .then(() => {
-        console.log("✅ Đã kết nối thành công tới MongoDB");
-    })
+    .then(() => console.log("✅ Đã kết nối thành công tới MongoDB"))
     .catch(err => {
         console.error("❌ Lỗi kết nối MongoDB:");
         console.error(err.message);
