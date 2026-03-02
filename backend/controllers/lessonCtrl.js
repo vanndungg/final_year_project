@@ -14,36 +14,36 @@ const lessonCtrl = {
     },
 
     getLessonsByCourse: async (req, res) => {
-        try {
-            const courseId = req.params.id;
-            const lessons = await Lessons.find({ courseId });
+    try {
+        const courseId = req.params.id;
+        const lessons = await Lessons.find({ courseId }).sort({ createdAt: 1 });
 
-            // Mặc định là khách (chưa mua)
-            let isEnrolled = false;
+        let isEnrolled = false;
 
-            // Nếu người dùng đã đăng nhập, kiểm tra xem họ đã mua khóa học này chưa
-            if (req.user) {
-                const user = await Users.findById(req.user.id);
-                isEnrolled = user.enrolledCourses.includes(courseId) || user.role === 'admin';
-            }
-
-            // Xử lý dữ liệu trả về
-            const data = lessons.map(lesson => {
-                return {
-                    _id: lesson._id,
-                    title: lesson.title,
-                    description: lesson.description,
-                    courseId: lesson.courseId,
-                    // Nếu đã mua hoặc là Admin thì hiện link thật, nếu chưa thì ẩn đi
-                    videoUrl: isEnrolled ? lesson.videoUrl : "🔒 Vui lòng đăng ký khóa học để xem video bài giảng"
-                };
-            });
-
-            res.json(data);
-        } catch (err) {
-            return res.status(500).json({ msg: err.message });
+        // 1. Kiểm tra quyền sở hữu
+        if (req.user) {
+            const user = await Users.findById(req.user.id);
+            // Check nếu đã mua khóa học HOẶC là Admin
+            isEnrolled = user.enrolledCourses.includes(courseId) || user.role === 'admin';
         }
+
+        // 2. Trả về dữ liệu đã được lọc (Bảo mật tuyệt đối từ Server)
+        const data = lessons.map((lesson, index) => {
+            return {
+                _id: lesson._id,
+                title: lesson.title,
+                description: lesson.description,
+                order: index + 1,
+                // Nếu chưa mua, trả về null hoặc chuỗi thông báo thay vì link thật
+                videoUrl: isEnrolled ? lesson.videoUrl : null 
+            };
+        });
+
+        res.json(data);
+    } catch (err) {
+        return res.status(500).json({ msg: err.message });
     }
+}
 };
 
 module.exports = lessonCtrl;

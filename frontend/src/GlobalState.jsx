@@ -7,8 +7,9 @@ export const DataProvider = ({ children }) => {
     const [token, setToken] = useState(false);
     const [isLogged, setIsLogged] = useState(false);
     const [user, setUser] = useState(null);
+    const [courses, setCourses] = useState([]);
 
-    // 1. Kiểm tra trạng thái đăng nhập khi load lại trang (F5)
+    // 1. Kiểm tra đăng nhập (F5)
     useEffect(() => {
         const firstLogin = localStorage.getItem('firstLogin');
         if (firstLogin) {
@@ -25,20 +26,12 @@ export const DataProvider = ({ children }) => {
         if (token) {
             const getUserInfo = async () => {
                 try {
-                    // Gọi API /users/infor (Khớp với app.use('/api/users'...) ở server.js)
                     const res = await axiosClient.get('/users/infor', {
                         headers: { Authorization: `Bearer ${token}` }
                     }); 
-                    
-                    // Cập nhật thông tin User vào state
                     setUser(res.data);
                     setIsLogged(true);
-
-                    console.log("Dữ liệu User đã tải:", res.data);
                 } catch (err) {
-                    console.error("Lỗi lấy thông tin user:", err.response?.data?.msg || err.message);
-                    
-                    // Nếu Token lỗi hoặc hết hạn (Status 400/401)
                     if (err.response?.status === 400 || err.response?.status === 401) {
                         localStorage.removeItem('firstLogin');
                         localStorage.removeItem('access_token');
@@ -50,13 +43,30 @@ export const DataProvider = ({ children }) => {
             };
             getUserInfo();
         }
-    }, [token]); // Chạy lại mỗi khi token thay đổi (Lúc mới đăng nhập xong)
+    }, [token]);
+
+    // 3. Lấy danh sách khóa học từ Backend
+    useEffect(() => {
+        const getCourses = async () => {
+            try {
+                const res = await axiosClient.get('/courses');
+                // Lưu ý: Backend của bạn trả về { status, result, courses: [...] }
+                setCourses(res.data.courses); 
+            } catch (err) {
+                console.error("Lỗi lấy danh sách khóa học:", err);
+            }
+        };
+        getCourses();
+    }, []);
 
     const state = {
         token: [token, setToken],
         userAPI: {
             isLogged: [isLogged, setIsLogged],
             user: [user, setUser]
+        },
+        coursesAPI: {
+            courses: [courses, setCourses]
         }
     };
 

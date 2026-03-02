@@ -16,7 +16,7 @@ const seedData = async () => {
         await mongoose.connect(URI);
         console.log("🚀 Đã kết nối MongoDB. Đang dọn dẹp dữ liệu cũ...");
 
-        // Xóa sạch dữ liệu cũ
+        // Xóa sạch dữ liệu cũ để tránh trùng lặp
         await User.deleteMany();
         await Course.deleteMany();
         await Lesson.deleteMany();
@@ -39,8 +39,7 @@ const seedData = async () => {
             name: "Nguyễn Học Viên",
             email: "student@gmail.com",
             password: hashPassword,
-            role: "user",
-            cart: [] // Sẽ cập nhật sau khi có khóa học
+            role: "user"
         });
 
         // 2. TẠO 5 KHÓA HỌC MẪU
@@ -87,30 +86,48 @@ const seedData = async () => {
             }
         ]);
 
-        // 3. TẠO BÀI HỌC MẪU (Cho khóa ReactJS và NodeJS)
-        await Lesson.insertMany([
-            { title: "Giới thiệu React & JSX", description: "Hiểu về DOM ảo", videoUrl: "https://www.youtube.com/watch?v=RGKi6LSPDLU", courseId: courses[0]._id },
-            { title: "React Hooks căn bản", description: "useState & useEffect", videoUrl: "https://www.youtube.com/watch?v=TNhaISOUy6Q", courseId: courses[0]._id },
-            { title: "Kiến trúc NodeJS", description: "Event Loop là gì?", videoUrl: "https://www.youtube.com/watch?v=6m8SshXvW5E", courseId: courses[1]._id }
-        ]);
+        // 3. TẠO BÀI HỌC MẪU CHO TẤT CẢ KHÓA HỌC
+        const lessonData = [
+            // Lessons cho ReactJS (Khóa 0)
+            { title: "Giới thiệu React & JSX", description: "Hiểu về DOM ảo và cách React render", videoUrl: "https://www.youtube.com/watch?v=RGKi6LSPDLU", courseId: courses[0]._id },
+            { title: "React Hooks căn bản", description: "Sử dụng useState & useEffect hiệu quả", videoUrl: "https://www.youtube.com/watch?v=TNhaISOUy6Q", courseId: courses[0]._id },
+            { title: "Redux Toolkit", description: "Quản lý state toàn cục cho ứng dụng lớn", videoUrl: "https://www.youtube.com/watch?v=9boMnmzDx9Q", courseId: courses[0]._id },
+
+            // Lessons cho NodeJS (Khóa 1)
+            { title: "Kiến trúc NodeJS", description: "Event Loop và Non-blocking I/O", videoUrl: "https://www.youtube.com/watch?v=6m8SshXvW5E", courseId: courses[1]._id },
+            { title: "Kết nối MongoDB", description: "Sử dụng Mongoose ODM", videoUrl: "https://www.youtube.com/watch?v=WDrU305J1yw", courseId: courses[1]._id },
+
+            // Lessons cho UI/UX (Khóa 2)
+            { title: "Làm quen với Figma", description: "Các công cụ vẽ vector cơ bản", videoUrl: "https://www.youtube.com/watch?v=c9Wg6ndoxpI", courseId: courses[2]._id },
+            { title: "Nguyên lý màu sắc", description: "Cách phối màu trong thiết kế hiện đại", videoUrl: "https://www.youtube.com/watch?v=GyV_UG60dD4", courseId: courses[2]._id },
+
+            // Lessons cho Python (Khóa 3)
+            { title: "Python Syntax cơ bản", description: "Biến, vòng lặp và hàm", videoUrl: "https://www.youtube.com/watch?v=rfscVS0vtbw", courseId: courses[3]._id },
+            { title: "Thư viện Pandas", description: "Xử lý bảng dữ liệu cực lớn", videoUrl: "https://www.youtube.com/watch?v=vmEHCJofslg", courseId: courses[3]._id },
+
+            // Lessons cho Tiếng Anh (Khóa 4)
+            { title: "Từ vựng chuyên ngành IT", description: "Các thuật ngữ hay dùng trong coding", videoUrl: "https://www.youtube.com/watch?v=5_f869n8GDM", courseId: courses[4]._id },
+            { title: "Đọc hiểu Documentation", description: "Mẹo đọc tài liệu API nhanh chóng", videoUrl: "https://www.youtube.com/watch?v=7PInS-GIdH4", courseId: courses[4]._id }
+        ];
+
+        await Lesson.insertMany(lessonData);
 
         // 4. TẠO REVIEW MẪU
         await Review.insertMany([
-            { courseId: courses[0]._id, userId: normalUser._id, rating: 5, comment: "Khóa học chất lượng quá thầy ơi!" },
-            { courseId: courses[1]._id, userId: normalUser._id, rating: 4, comment: "Rất chi tiết nhưng cần thêm nhiều bài tập thực hành." }
+            { courseId: courses[0]._id, userId: normalUser._id, rating: 5, comment: "Khóa học React chất lượng quá thầy ơi!" },
+            { courseId: courses[1]._id, userId: normalUser._id, rating: 4, comment: "Backend dạy rất kỹ, mong thầy thêm phần Docker." }
         ]);
 
-        // 5. CẬP NHẬT GIỎ HÀNG & KHÓA HỌC ĐÃ MUA CHO USER (Để demo)
-        // User đã mua khóa 1, và đang để khóa 2 trong giỏ hàng
+        // 5. CẬP NHẬT TRẠNG THÁI USER ĐỂ DEMO
+        // Giả lập User này đã mua khóa ReactJS (khóa 0) để khi review bạn bấm vào xem được bài học ngay
         await User.findByIdAndUpdate(normalUser._id, {
-            enrolledCourses: [courses[0]._id],
-            cart: [courses[1]] 
+            enrolledCourses: [courses[0]._id]
         });
 
         console.log("-----------------------------------------");
         console.log("✅ SEED DỮ LIỆU THÀNH CÔNG!");
-        console.log(`👤 Tài khoản User: student@gmail.com / 123456`);
-        console.log(`🔑 Tài khoản Admin: admin@gmail.com / 123456`);
+        console.log(`👤 User: student@gmail.com / 123456 (Đã mua khóa ReactJS)`);
+        console.log(`🔑 Admin: admin@gmail.com / 123456`);
         console.log("-----------------------------------------");
         
         process.exit();

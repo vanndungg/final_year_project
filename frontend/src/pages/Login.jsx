@@ -39,8 +39,8 @@ function Login() {
             
             toast.success("Đăng nhập thành công! 🚀");
             
-            // Chuyển về trang chủ
-            navigate('/'); 
+            // Chuyển về trang chủ sau 1 giây
+            setTimeout(() => navigate('/'), 1000);
             
         } catch (err) {
             const msg = err.response?.data?.msg || "Đăng nhập thất bại";

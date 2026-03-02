@@ -1,12 +1,13 @@
 const Users = require('../models/User');
+const Courses = require('../models/Course');
 
 const userCtrl = {
-    // 1. Lấy thông tin cá nhân + các khóa học đã mua (Dùng để demo My Courses)
+    // 1. Lấy thông tin cá nhân + các khóa học đã mua
     getUser: async (req, res) => {
         try {
             const user = await Users.findById(req.user.id)
                 .select('-password')
-                .populate('enrolledCourses'); // Tự động lấy chi tiết khóa học từ ID
+                .populate('enrolledCourses');
             
             if (!user) return res.status(400).json({ msg: "Người dùng không tồn tại." });
             res.json(user);
@@ -21,8 +22,7 @@ const userCtrl = {
             const user = await Users.findById(req.user.id);
             if (!user) return res.status(400).json({ msg: "Người dùng không tồn tại." });
 
-            const { cart } = req.body; // Frontend gửi mảng cart mới lên
-
+            const { cart } = req.body;
             await Users.findOneAndUpdate({ _id: req.user.id }, { cart });
 
             return res.json({ msg: "Đã thêm vào giỏ hàng thành công!" });
@@ -31,8 +31,7 @@ const userCtrl = {
         }
     },
 
-    // 3. Thanh toán (Chuyển toàn bộ Giỏ hàng sang Enrolled Courses)
-    // Đây là tính năng "ăn tiền" nhất khi demo
+    // 3. Thanh toán (Chuyển giỏ hàng sang khóa học sở hữu)
     checkout: async (req, res) => {
         try {
             const user = await Users.findById(req.user.id);
@@ -40,22 +39,21 @@ const userCtrl = {
 
             if (cart.length === 0) return res.status(400).json({ msg: "Giỏ hàng rỗng, không thể thanh toán." });
 
-            // Lấy danh sách ID khóa học từ giỏ hàng
             const newCourseIds = cart.map(item => item._id);
-
-            // Cập nhật User: Push các ID mới vào enrolledCourses và Xóa sạch cart
             await Users.findOneAndUpdate({ _id: req.user.id }, {
                 $push: { enrolledCourses: { $each: newCourseIds } },
                 $set: { cart: [] }
             });
 
-            return res.json({ msg: "Thanh toán thành công! Khóa học đã được thêm vào tài khoản của bạn." });
+            return res.json({ msg: "Thanh toán thành công!" });
         } catch (err) {
             return res.status(500).json({ msg: err.message });
         }
     },
 
-    // 4. Đăng ký nhanh (Enroll trực tiếp không qua giỏ hàng)
+    // 4. (Removed) legacy SePay helper was reverted
+
+    // 5. Đăng ký nhanh (Dành cho khóa học MIỄN PHÍ)
     enrollCourse: async (req, res) => {
         try {
             const user = await Users.findById(req.user.id);
@@ -74,7 +72,7 @@ const userCtrl = {
         }
     },
 
-    // 5. Lấy danh sách khóa học đã đăng ký
+    // 6. Lấy danh sách khóa học đã đăng ký
     getEnrolledCourses: async (req, res) => {
         try {
             const user = await Users.findById(req.user.id)

@@ -5,10 +5,8 @@ const Users = require('../models/User');
 const courseCtrl = {
     getCourses: async (req, res) => {
         try {
-            // Lấy toàn bộ danh sách khóa học, sắp xếp cái mới nhất lên đầu
             const courses = await Courses.find().sort('-createdAt');
 
-            // Tính toán thống kê cho từng khóa học
             const coursesWithStats = await Promise.all(courses.map(async (course) => {
                 const studentCount = await Users.countDocuments({ enrolledCourses: course._id });
                 const reviews = await Reviews.find({ courseId: course._id });
@@ -56,7 +54,9 @@ const courseCtrl = {
             const course = await Courses.findById(req.params.id);
             if (!course) return res.status(400).json({ msg: "Khóa học không tồn tại." });
 
-            const reviews = await Reviews.find({ courseId: course._id });
+            // Lấy reviews và populate tên user để hiển thị ở Frontend
+            const reviews = await Reviews.find({ courseId: course._id }).populate('userId', 'name avatar');
+            
             const avgRating = reviews.length > 0 
                 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
                 : 0;
@@ -64,7 +64,8 @@ const courseCtrl = {
             res.json({
                 ...course._doc,
                 avgRating: Number(avgRating),
-                totalReviews: reviews.length
+                totalReviews: reviews.length,
+                reviews // Gửi kèm danh sách review về cho Detail Page
             });
         } catch (err) {
             return res.status(500).json({ msg: err.message });
