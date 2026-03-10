@@ -70,6 +70,34 @@ const courseCtrl = {
         } catch (err) {
             return res.status(500).json({ msg: err.message });
         }
+    },
+
+    updateCourse: async (req, res) => {
+        try {
+            const { title, description, price, image, category, teacher } = req.body;
+            
+            // Tìm và cập nhật khóa học theo ID từ params
+            const course = await Courses.findOneAndUpdate(
+                { _id: req.params.id },
+                { title, description, price, image, category, teacher },
+                { new: true } // Trả về dữ liệu mới sau khi sửa
+            );
+
+            if (!course) return res.status(400).json({ msg: "Khóa học không tồn tại." });
+
+            res.json({ msg: "Cập nhật khóa học thành công!", course });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    deleteCourse: async (req, res) => {
+        try {
+            await Courses.findByIdAndDelete(req.params.id);
+            res.json({ msg: "Đã xóa khóa học thành công!" });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
     }
 };
 

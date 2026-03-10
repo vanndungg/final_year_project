@@ -28,9 +28,20 @@ function Header() {
                 
                 {isLogged ? (
                     <div className="flex items-center space-x-4">
+                        {/* NÚT ADMIN: Chỉ hiện khi user.role là 1 */}
+                        {user?.role === 1 && (
+                            <Link 
+                                to="/admin/dashboard" 
+                                className="bg-amber-500 text-white px-4 py-1.5 rounded-lg hover:bg-amber-600 transition shadow-sm font-bold flex items-center gap-1"
+                            >
+                                ⚙️ Quản trị
+                            </Link>
+                        )}
+
                         <span className="font-semibold text-gray-800">
-                           👋 Chào, <span className="text-blue-600">{user?.name || 'Học viên'}</span>
+                            👋 Chào, <span className="text-blue-600">{user?.name || 'Học viên'}</span>
                         </span>
+                        
                         <button 
                             onClick={logoutUser}
                             className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600 transition shadow-sm"

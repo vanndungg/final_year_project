@@ -17,8 +17,8 @@ const UserSchema = new mongoose.Schema({
         required: [true, "Vui lòng nhập mật khẩu"] 
     },
     role: { 
-        type: String, 
-        default: 'user' // 'user' hoặc 'admin'
+        type: Number, // ✅ Bắt buộc phải là Number
+        default: 0
     },
     // 🛒 Giỏ hàng: Lưu các khóa học người dùng định mua nhưng chưa thanh toán
     cart: {

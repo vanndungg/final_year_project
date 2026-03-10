@@ -6,17 +6,19 @@ export const GlobalState = createContext();
 export const DataProvider = ({ children }) => {
     const [token, setToken] = useState(false);
     const [isLogged, setIsLogged] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false); // 🆕 Thêm state kiểm tra Admin
     const [user, setUser] = useState(null);
     const [courses, setCourses] = useState([]);
+    const [callback, setCallback] = useState(false);
 
-    // 1. Kiểm tra đăng nhập (F5)
+    // 1. Kiểm tra đăng nhập khi F5 trang web
     useEffect(() => {
         const firstLogin = localStorage.getItem('firstLogin');
         if (firstLogin) {
             const accessToken = localStorage.getItem('access_token');
             if (accessToken) {
                 setToken(accessToken);
-                setIsLogged(true);
+                // Lưu ý: Chưa set isLogged ở đây vì đợi getUserInfo xác thực cho chắc chắn
             }
         }
     }, []);
@@ -29,44 +31,57 @@ export const DataProvider = ({ children }) => {
                     const res = await axiosClient.get('/users/infor', {
                         headers: { Authorization: `Bearer ${token}` }
                     }); 
+                    
                     setUser(res.data);
                     setIsLogged(true);
-                } catch (err) {
-                    if (err.response?.status === 400 || err.response?.status === 401) {
-                        localStorage.removeItem('firstLogin');
-                        localStorage.removeItem('access_token');
-                        setToken(false);
-                        setIsLogged(false);
-                        setUser(null);
+
+                    // 🆕 Kiểm tra Role bằng số: 1 là Admin
+                    if (Number(res.data.role) === 1) {
+                        setIsAdmin(true);
+                    } else {
+                        setIsAdmin(false);
                     }
+
+                } catch (err) {
+                    // Nếu token hết hạn hoặc lỗi xác thực
+                    console.error("Lỗi lấy thông tin user:", err);
+                    localStorage.removeItem('firstLogin');
+                    localStorage.removeItem('access_token');
+                    setToken(false);
+                    setIsLogged(false);
+                    setIsAdmin(false);
+                    setUser(null);
                 }
             };
             getUserInfo();
         }
     }, [token]);
 
-    // 3. Lấy danh sách khóa học từ Backend
+    // 3. Lấy danh sách khóa học
     useEffect(() => {
         const getCourses = async () => {
             try {
                 const res = await axiosClient.get('/courses');
-                // Lưu ý: Backend của bạn trả về { status, result, courses: [...] }
-                setCourses(res.data.courses); 
+                // Backend trả về { courses: [...] }
+                setCourses(res.data.courses || []); 
             } catch (err) {
                 console.error("Lỗi lấy danh sách khóa học:", err);
             }
         };
         getCourses();
-    }, []);
+    }, [callback]); 
 
+    // Gom tất cả state vào một object để truyền xuống các con
     const state = {
         token: [token, setToken],
         userAPI: {
             isLogged: [isLogged, setIsLogged],
+            isAdmin: [isAdmin, setIsAdmin], // 🆕 Xuất isAdmin ra ngoài
             user: [user, setUser]
         },
         coursesAPI: {
-            courses: [courses, setCourses]
+            courses: [courses, setCourses],
+            callback: [callback, setCallback]
         }
     };
 

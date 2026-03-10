@@ -9,16 +9,16 @@ const swaggerJsdoc = require('swagger-jsdoc');
 
 const app = express();
 
-// --- 1. CẤU HÌNH MIDDLEWARE ---
+// --- 1. CẤU HÌNH MIDDLEWARE (Đặt trên cùng) ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet({ contentSecurityPolicy: false }));
 
-// Cấu hình CORS cho phép Frontend Local và Ngrok truy cập
+// Cấu hình CORS: Cho phép Frontend truy cập
 app.use(cors({
-    origin: ['http://localhost:5173', /\.ngrok-free\.app$/, /\.ngrok-free\.dev$/],
+    origin: ['http://localhost:5173', 'http://127.0.0.1:5173', /\.ngrok-free\.app$/, /\.ngrok-free\.dev$/],
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Thêm PATCH cho update role/cart
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -29,15 +29,11 @@ const swaggerOptions = {
         info: {
             title: 'E-Learning API Documentation',
             version: '1.0.0',
-            description: 'Tài liệu API cho hệ thống học trực tuyến - Dự án Văn Dũng',
-            contact: { name: 'Văn Dũng' }
+            description: 'Tài liệu API cho hệ thống học trực tuyến',
         },
         servers: [
             { url: 'http://localhost:5000', description: 'Local Server' },
-            { 
-                url: 'https://seminivorous-mozelle-postesophageal.ngrok-free.dev', 
-                description: 'Ngrok Public Server (Dành cho SePay Webhook)' 
-            }
+            { url: 'https://seminivorous-mozelle-postesophageal.ngrok-free.dev', description: 'Ngrok Server' }
         ],
         components: {
             securitySchemes: {
@@ -55,12 +51,17 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// --- 3. ĐĂNG KÝ CÁC ROUTES ---
-// Payment routes removed (unstable changes reverted)
+// --- 3. ĐĂNG KÝ CÁC ROUTES (Sắp xếp lại logic) ---
 
+// Nhóm Auth: Xử lý Đăng ký / Đăng nhập
+// Lưu ý: Đảm bảo trong authRouter dùng userCtrl đồng nhất với hệ thống số (0/1)
 app.use('/api', require('./routes/authRouter')); 
-app.use('/api/courses', require('./routes/courseRouter')); 
+
+// Nhóm Users: Xử lý Profile, Giỏ hàng, Admin quản lý User
 app.use('/api/users', require('./routes/userRouter'));
+
+// Nhóm Courses & Nội dung
+app.use('/api/courses', require('./routes/courseRouter')); 
 app.use('/api/lessons', require('./routes/lessonRouter')); 
 app.use('/api/reviews', require('./routes/reviewRouter'));
 app.use('/api/progress', require('./routes/progressRouter'));
@@ -90,7 +91,6 @@ mongoose.connect(URI)
         app.listen(PORT, () => {
             console.log(`🚀 Server is running on port ${PORT}`);
             console.log(`📖 Swagger UI: http://localhost:5000/api-docs`);
-            // Webhook URL logging removed
         });
     })
     .catch(err => {

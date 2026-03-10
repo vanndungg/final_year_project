@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const authCtrl = require('../controllers/authCtrl');
+const userCtrl = require('../controllers/userCtrl');
 
 /**
  * @swagger
@@ -24,7 +24,7 @@ const authCtrl = require('../controllers/authCtrl');
  *       '200':
  *         description: OK
  */
-router.post('/register', authCtrl.register);
+router.post('/register', userCtrl.register);
 
 /**
  * @swagger
@@ -47,6 +47,6 @@ router.post('/register', authCtrl.register);
  *       '200':
  *         description: OK
  */
-router.post('/login', authCtrl.login);
+router.post('/login', userCtrl.login);
 
 module.exports = router;

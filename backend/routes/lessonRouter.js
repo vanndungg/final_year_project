@@ -73,4 +73,8 @@ router.get('/:id', optionalAuth, lessonCtrl.getLessonsByCourse);
 // Admin thêm bài học
 router.post('/', auth, authAdmin, lessonCtrl.createLesson);
 
+router.put('/:id', auth, authAdmin, lessonCtrl.updateLesson);
+router.delete('/:id', auth, authAdmin, lessonCtrl.deleteLesson);
+router.get('/detail/:id', auth, authAdmin, lessonCtrl.getSingleLesson);
+
 module.exports = router;

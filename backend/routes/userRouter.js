@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const userCtrl = require('../controllers/userCtrl');
 const auth = require('../middleware/auth');
+const authAdmin = require('../middleware/authAdmin');
 
 /**
  * @swagger
@@ -33,24 +34,30 @@ const auth = require('../middleware/auth');
  *         description: Danh sách khóa học đã đăng ký
  */
 
-// 1. Lấy thông tin cá nhân (Quan trọng nhất để hiện tên lên Header)
-// Đường dẫn đầy đủ: GET /api/users/infor
+// 1. Lấy thông tin cá nhân
 router.get('/infor', auth, userCtrl.getUser); 
 
 // 2. Quản lý Giỏ hàng
-// Đường dẫn đầy đủ: PATCH /api/users/addcart
 router.patch('/addcart', auth, userCtrl.addCart);
 
-// 3. Thanh toán (Chuyển giỏ hàng sang khóa học sở hữu)
-// Đường dẫn đầy đủ: POST /api/users/checkout
+// 3. Thanh toán
 router.post('/checkout', auth, userCtrl.checkout);
 
 // 4. Đăng ký khóa học nhanh
-// Đường dẫn đầy đủ: PATCH /api/users/enroll
 router.patch('/enroll', auth, userCtrl.enrollCourse);
 
-// 5. Lấy danh sách khóa học của tôi
-// Đường dẫn đầy đủ: GET /api/users/enrolled_courses
+// 5. Lấy danh sách khóa học cá nhân
 router.get('/enrolled_courses', auth, userCtrl.getEnrolledCourses);
+
+
+// --- 🆕 ROUTES DÀNH CHO ADMIN (Thêm mới) ---
+
+// 6. Lấy toàn bộ danh sách người dùng
+// Đường dẫn: GET /api/users/all_info
+router.get('/all_info', auth, authAdmin, userCtrl.getUsersAllInfor);
+
+// 7. Cập nhật quyền (Admin/User)
+// Đường dẫn: PATCH /api/users/update_role/:id
+router.patch('/update_role/:id', auth, authAdmin, userCtrl.updateRole);
 
 module.exports = router;

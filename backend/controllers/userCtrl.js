@@ -1,8 +1,86 @@
 const Users = require('../models/User');
 const Courses = require('../models/Course');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const userCtrl = {
-    // 1. Lấy thông tin cá nhân + các khóa học đã mua
+    // 1. Đăng ký tài khoản
+    register: async (req, res) => {
+        try {
+            const { name, email, password } = req.body;
+
+            const user = await Users.findOne({ email });
+            if (user) return res.status(400).json({ msg: "Email này đã được đăng ký." });
+
+            if (password.length < 6)
+                return res.status(400).json({ msg: "Mật khẩu phải có ít nhất 6 ký tự." });
+
+            // Mã hóa mật khẩu
+            const passwordHash = await bcrypt.hash(password, 10);
+            const newUser = new Users({
+                name, email, password: passwordHash, role: 0 // Mặc định là học viên (0)
+            });
+
+            // Lưu vào MongoDB
+            await newUser.save();
+
+            // Tạo token để đăng nhập ngay sau khi đăng ký
+            const access_token = createAccessToken({ id: newUser._id });
+
+            res.json({
+                msg: "Đăng ký thành công!",
+                access_token,
+                user: {
+                    ...newUser._doc,
+                    password: ''
+                }
+            });
+
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    // 2. Đăng nhập
+    login: async (req, res) => {
+        try {
+            const { email, password } = req.body;
+
+            const user = await Users.findOne({ email });
+            if (!user) return res.status(400).json({ msg: "Người dùng không tồn tại." });
+
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) return res.status(400).json({ msg: "Mật khẩu không đúng." });
+
+            // Tạo Access Token
+            const access_token = createAccessToken({ id: user._id });
+
+            res.json({
+                msg: "Đăng nhập thành công!",
+                access_token,
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role // Trả về 0 hoặc 1
+                }
+            });
+
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    // 3. Đăng xuất (Chủ yếu xử lý ở Client bằng cách xóa Token, ở đây trả về thông báo)
+    logout: async (req, res) => {
+        try {
+            return res.json({ msg: "Đã đăng xuất." });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    // 4. Lấy thông tin cá nhân (Profile)
     getUser: async (req, res) => {
         try {
             const user = await Users.findById(req.user.id)
@@ -16,12 +94,9 @@ const userCtrl = {
         }
     },
 
-    // 2. Thêm khóa học vào Giỏ hàng
+    // 5. Quản lý Giỏ hàng
     addCart: async (req, res) => {
         try {
-            const user = await Users.findById(req.user.id);
-            if (!user) return res.status(400).json({ msg: "Người dùng không tồn tại." });
-
             const { cart } = req.body;
             await Users.findOneAndUpdate({ _id: req.user.id }, { cart });
 
@@ -31,17 +106,15 @@ const userCtrl = {
         }
     },
 
-    // 3. Thanh toán (Chuyển giỏ hàng sang khóa học sở hữu)
+    // 6. Thanh toán
     checkout: async (req, res) => {
         try {
             const user = await Users.findById(req.user.id);
-            const cart = user.cart;
+            if (!user || user.cart.length === 0) 
+                return res.status(400).json({ msg: "Giỏ hàng rỗng." });
 
-            if (cart.length === 0) return res.status(400).json({ msg: "Giỏ hàng rỗng, không thể thanh toán." });
-
-            const newCourseIds = cart.map(item => item._id);
+            const newCourseIds = user.cart.map(item => item._id);
             
-            // Sử dụng $addToSet thay vì $push để tránh trùng lặp nếu bấm nhiều lần
             await Users.findOneAndUpdate({ _id: req.user.id }, {
                 $addToSet: { enrolledCourses: { $each: newCourseIds } },
                 $set: { cart: [] }
@@ -53,62 +126,70 @@ const userCtrl = {
         }
     },
 
-    // 5. Đăng ký nhanh (Dành cho nút bấm xác nhận/miễn phí)
+    // 7. Đăng ký khóa học nhanh
     enrollCourse: async (req, res) => {
         try {
-            console.log('[ENROLL API] userId:', req.user?.id, 'body:', req.body);
-
-            const user = await Users.findById(req.user.id);
-            if(!user) {
-                console.log('[ENROLL API] missing user');
-                return res.status(400).json({msg: "Người dùng không tồn tại."});
-            }
-
             const { courseId } = req.body;
-            if(!courseId) {
-                console.log('[ENROLL API] missing courseId');
-                return res.status(400).json({msg: "Thiếu ID khóa học."});
-            }
+            const user = await Users.findById(req.user.id);
 
-            // Kiểm tra xem đã đăng ký chưa
-            // Lưu ý: Dùng .toString() để so sánh chính xác các Object ID của MongoDB
             const isEnrolled = user.enrolledCourses.some(id => id.toString() === courseId);
-            if(isEnrolled) {
-                console.log('[ENROLL API] already enrolled');
-                return res.status(400).json({msg: "Bạn đã sở hữu khóa học này."});
-            }
+            if(isEnrolled) return res.status(400).json({msg: "Bạn đã sở hữu khóa học này."});
 
-            // Thêm vào danh sách
             await Users.findOneAndUpdate({_id: req.user.id}, {
                 $push: { enrolledCourses: courseId }
             });
 
-            // Tăng số lượng học viên cho khóa học
             await Courses.findOneAndUpdate({_id: courseId}, {
                 $inc: { studentCount: 1 }
             });
 
-            console.log('[ENROLL API] success');
-            res.json({msg: "Đăng ký khóa học thành công!"});
+            res.json({msg: "Đăng ký thành công!"});
         } catch (err) {
-            console.error('[ENROLL API] error', err);
             return res.status(500).json({msg: err.message});
         }
     },
 
-    // 6. Lấy danh sách khóa học đã đăng ký
+    // 8. Admin: Lấy danh sách tất cả người dùng
+    getUsersAllInfor: async (req, res) => {
+        try {
+            const users = await Users.find().select('-password');
+            res.json(users);
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    // 9. Admin: Cập nhật quyền (Role)
+    updateRole: async (req, res) => {
+        try {
+            const { role } = req.body;
+            // Ép kiểu Number để chắc chắn lưu vào DB là số (0 hoặc 1)
+            await Users.findOneAndUpdate(
+                { _id: req.params.id }, 
+                { role: Number(role) }
+            );
+            
+            res.json({ msg: "Cập nhật quyền hạn thành công!" });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    // 10. Lấy danh sách khóa học đã đăng ký
     getEnrolledCourses: async (req, res) => {
         try {
-            const user = await Users.findById(req.user.id)
-                .select('enrolledCourses')
-                .populate('enrolledCourses');
-            
+            const user = await Users.findById(req.user.id).populate('enrolledCourses');
             if (!user) return res.status(400).json({ msg: "Người dùng không tồn tại." });
             res.json(user.enrolledCourses);
         } catch (err) {
             return res.status(500).json({ msg: err.message });
         }
     }
+};
+
+// Hàm bổ trợ tạo JWT
+const createAccessToken = (user) => {
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET || 'secret123', { expiresIn: '1d' });
 };
 
 module.exports = userCtrl;

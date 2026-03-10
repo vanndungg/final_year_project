@@ -24,7 +24,7 @@ const seedData = async () => {
 
         console.log("📝 Đang khởi tạo dữ liệu mới...");
 
-        // 1. TẠO USER & ADMIN MẪU
+        // 1. TẠO USER & ADMIN MẪU (Sửa Role từ String sang Number)
         const salt = await bcrypt.genSalt(10);
         const hashPassword = await bcrypt.hash('123456', salt);
 
@@ -32,14 +32,14 @@ const seedData = async () => {
             name: "Văn Dũng Admin",
             email: "admin@gmail.com",
             password: hashPassword,
-            role: "admin"
+            role: 1 // 👈 THAY ĐỔI: "admin" -> 1
         });
 
         const normalUser = await User.create({
             name: "Nguyễn Học Viên",
             email: "student@gmail.com",
             password: hashPassword,
-            role: "user"
+            role: 0 // 👈 THAY ĐỔI: "user" -> 0
         });
 
         // 2. TẠO 5 KHÓA HỌC MẪU
@@ -86,26 +86,17 @@ const seedData = async () => {
             }
         ]);
 
-        // 3. TẠO BÀI HỌC MẪU CHO TẤT CẢ KHÓA HỌC
+        // 3. TẠO BÀI HỌC MẪU
         const lessonData = [
-            // Lessons cho ReactJS (Khóa 0)
             { title: "Giới thiệu React & JSX", description: "Hiểu về DOM ảo và cách React render", videoUrl: "https://www.youtube.com/watch?v=RGKi6LSPDLU", courseId: courses[0]._id },
             { title: "React Hooks căn bản", description: "Sử dụng useState & useEffect hiệu quả", videoUrl: "https://www.youtube.com/watch?v=TNhaISOUy6Q", courseId: courses[0]._id },
             { title: "Redux Toolkit", description: "Quản lý state toàn cục cho ứng dụng lớn", videoUrl: "https://www.youtube.com/watch?v=9boMnmzDx9Q", courseId: courses[0]._id },
-
-            // Lessons cho NodeJS (Khóa 1)
             { title: "Kiến trúc NodeJS", description: "Event Loop và Non-blocking I/O", videoUrl: "https://www.youtube.com/watch?v=6m8SshXvW5E", courseId: courses[1]._id },
             { title: "Kết nối MongoDB", description: "Sử dụng Mongoose ODM", videoUrl: "https://www.youtube.com/watch?v=WDrU305J1yw", courseId: courses[1]._id },
-
-            // Lessons cho UI/UX (Khóa 2)
             { title: "Làm quen với Figma", description: "Các công cụ vẽ vector cơ bản", videoUrl: "https://www.youtube.com/watch?v=c9Wg6ndoxpI", courseId: courses[2]._id },
             { title: "Nguyên lý màu sắc", description: "Cách phối màu trong thiết kế hiện đại", videoUrl: "https://www.youtube.com/watch?v=GyV_UG60dD4", courseId: courses[2]._id },
-
-            // Lessons cho Python (Khóa 3)
             { title: "Python Syntax cơ bản", description: "Biến, vòng lặp và hàm", videoUrl: "https://www.youtube.com/watch?v=rfscVS0vtbw", courseId: courses[3]._id },
             { title: "Thư viện Pandas", description: "Xử lý bảng dữ liệu cực lớn", videoUrl: "https://www.youtube.com/watch?v=vmEHCJofslg", courseId: courses[3]._id },
-
-            // Lessons cho Tiếng Anh (Khóa 4)
             { title: "Từ vựng chuyên ngành IT", description: "Các thuật ngữ hay dùng trong coding", videoUrl: "https://www.youtube.com/watch?v=5_f869n8GDM", courseId: courses[4]._id },
             { title: "Đọc hiểu Documentation", description: "Mẹo đọc tài liệu API nhanh chóng", videoUrl: "https://www.youtube.com/watch?v=7PInS-GIdH4", courseId: courses[4]._id }
         ];
@@ -119,15 +110,14 @@ const seedData = async () => {
         ]);
 
         // 5. CẬP NHẬT TRẠNG THÁI USER ĐỂ DEMO
-        // Giả lập User này đã mua khóa ReactJS (khóa 0) để khi review bạn bấm vào xem được bài học ngay
         await User.findByIdAndUpdate(normalUser._id, {
             enrolledCourses: [courses[0]._id]
         });
 
         console.log("-----------------------------------------");
         console.log("✅ SEED DỮ LIỆU THÀNH CÔNG!");
-        console.log(`👤 User: student@gmail.com / 123456 (Đã mua khóa ReactJS)`);
-        console.log(`🔑 Admin: admin@gmail.com / 123456`);
+        console.log(`👤 User: student@gmail.com / 123456 (Role: 0)`);
+        console.log(`🔑 Admin: admin@gmail.com / 123456 (Role: 1)`);
         console.log("-----------------------------------------");
         
         process.exit();
