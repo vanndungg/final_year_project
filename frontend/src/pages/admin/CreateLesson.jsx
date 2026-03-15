@@ -8,7 +8,7 @@ const CreateLesson = () => {
     const { courseId, lessonId } = useParams(); // lessonId dùng cho trường hợp Sửa
     const navigate = useNavigate();
     const state = useContext(GlobalState);
-    const [token] = state.token;
+    const [token = ''] = state?.token || [''];
 
     const [lesson, setLesson] = useState({
         title: '',
@@ -17,12 +17,11 @@ const CreateLesson = () => {
         courseId: courseId || '' // Đổi thành courseId cho đồng nhất với Backend
     });
 
-    const [onEdit, setOnEdit] = useState(false);
+    const onEdit = Boolean(lessonId);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (lessonId) {
-            setOnEdit(true);
+        if (onEdit) {
             const getLessonDetails = async () => {
                 try {
                     // Gọi đúng route detail để lấy 1 bài học duy nhất
@@ -33,16 +32,20 @@ const CreateLesson = () => {
                         video_id: res.data.video_id,
                         courseId: res.data.courseId
                     });
-                } catch (err) {
+                } catch {
                     toast.error("Không thể tải thông tin bài học!");
                 }
             };
             getLessonDetails();
         }
-    }, [lessonId]);
+    }, [lessonId, onEdit]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!token) {
+            toast.error('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.');
+            return;
+        }
         setLoading(true);
         try {
             if (onEdit) {

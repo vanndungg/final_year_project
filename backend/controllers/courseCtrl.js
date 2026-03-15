@@ -1,6 +1,7 @@
 const Courses = require('../models/Course');
 const Reviews = require('../models/Review');
 const Users = require('../models/User');
+const Lessons = require('../models/Lesson');
 
 const courseCtrl = {
     getCourses: async (req, res) => {
@@ -8,8 +9,11 @@ const courseCtrl = {
             const courses = await Courses.find().sort('-createdAt');
 
             const coursesWithStats = await Promise.all(courses.map(async (course) => {
-                const studentCount = await Users.countDocuments({ enrolledCourses: course._id });
-                const reviews = await Reviews.find({ courseId: course._id });
+                const [studentCount, reviews, lessonCount] = await Promise.all([
+                    Users.countDocuments({ enrolledCourses: course._id }),
+                    Reviews.find({ courseId: course._id }),
+                    Lessons.countDocuments({ courseId: course._id })
+                ]);
                 const avgRating = reviews.length > 0 
                     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
                     : 0;
@@ -17,6 +21,7 @@ const courseCtrl = {
                 return {
                     ...course._doc,
                     studentCount,
+                    lessonCount,
                     avgRating: Number(avgRating),
                     totalReviews: reviews.length
                 };
@@ -54,8 +59,11 @@ const courseCtrl = {
             const course = await Courses.findById(req.params.id);
             if (!course) return res.status(400).json({ msg: "Khóa học không tồn tại." });
 
-            // Lấy reviews và populate tên user để hiển thị ở Frontend
-            const reviews = await Reviews.find({ courseId: course._id }).populate('userId', 'name avatar');
+            const [studentCount, lessonCount, reviews] = await Promise.all([
+                Users.countDocuments({ enrolledCourses: course._id }),
+                Lessons.countDocuments({ courseId: course._id }),
+                Reviews.find({ courseId: course._id }).populate('userId', 'name avatar')
+            ]);
             
             const avgRating = reviews.length > 0 
                 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
@@ -63,6 +71,8 @@ const courseCtrl = {
 
             res.json({
                 ...course._doc,
+                studentCount,
+                lessonCount,
                 avgRating: Number(avgRating),
                 totalReviews: reviews.length,
                 reviews // Gửi kèm danh sách review về cho Detail Page

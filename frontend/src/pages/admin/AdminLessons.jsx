@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 const AdminLessons = () => {
     const params = useParams(); // Lấy courseId từ URL
     const state = useContext(GlobalState);
-    const [token] = state.token;
+    const [token = ''] = state?.token || [''];
     
     const [lessons, setLessons] = useState([]);
     const [courseName, setCourseName] = useState('');

@@ -7,122 +7,143 @@ const Course = require('../models/Course');
 const User = require('../models/User');
 const Lesson = require('../models/Lesson');
 const Review = require('../models/Review');
+const Payment = require('../models/Payment');
 
 const seedData = async () => {
     try {
         const URI = process.env.MONGODB_URL;
-        if (!URI) throw new Error("Không tìm thấy MONGODB_URL trong file .env");
-
         await mongoose.connect(URI);
-        console.log("🚀 Đã kết nối MongoDB. Đang dọn dẹp dữ liệu cũ...");
+        console.log("🚀 Bắt đầu quá trình xây dựng hệ thống dữ liệu chuyên nghiệp...");
 
-        // Xóa sạch dữ liệu cũ để tránh trùng lặp
-        await User.deleteMany();
-        await Course.deleteMany();
-        await Lesson.deleteMany();
-        await Review.deleteMany();
+        // Xóa sạch dữ liệu cũ
+        await Promise.all([
+            User.deleteMany(),
+            Course.deleteMany(),
+            Lesson.deleteMany(),
+            Review.deleteMany(),
+            Payment.deleteMany()
+        ]);
 
-        console.log("📝 Đang khởi tạo dữ liệu mới...");
-
-        // 1. TẠO USER & ADMIN MẪU (Sửa Role từ String sang Number)
         const salt = await bcrypt.genSalt(10);
         const hashPassword = await bcrypt.hash('123456', salt);
 
-        const adminUser = await User.create({
-            name: "Văn Dũng Admin",
-            email: "admin@gmail.com",
-            password: hashPassword,
-            role: 1 // 👈 THAY ĐỔI: "admin" -> 1
-        });
-
-        const normalUser = await User.create({
-            name: "Nguyễn Học Viên",
-            email: "student@gmail.com",
-            password: hashPassword,
-            role: 0 // 👈 THAY ĐỔI: "user" -> 0
-        });
-
-        // 2. TẠO 5 KHÓA HỌC MẪU
-        const courses = await Course.insertMany([
-            {
-                title: "Lập trình ReactJS thực chiến",
-                description: "Làm chủ React Hook, Redux và xây dựng dự án E-commerce hoàn chỉnh.",
-                price: 599000,
-                image: "https://vungiaphuc.com/wp-content/uploads/2023/04/reactjs.jpg",
-                category: "Web Development",
-                teacher: "Văn Dũng Admin"
-            },
-            {
-                title: "NodeJS Professional Backend",
-                description: "Học Express, MongoDB, JWT và cách triển khai Microservices.",
-                price: 799000,
-                image: "https://miro.medium.com/v2/resize:fit:1200/1*u677H9_O673YidJ_HSlb9Q.png",
-                category: "Backend",
-                teacher: "Văn Dũng Admin"
-            },
-            {
-                title: "UI/UX Design với Figma",
-                description: "Từ tư duy thiết kế đến Prototype ứng dụng di động chuyên nghiệp.",
-                price: 299000,
-                image: "https://ict-imgs.fpt.ai/images-cms/img_1656042457635_6820c74b98.png",
-                category: "Design",
-                teacher: "Văn Dũng Admin"
-            },
-            {
-                title: "Python for Data Science",
-                description: "Sử dụng Pandas, Numpy và Matplotlib để phân tích dữ liệu chuyên sâu.",
-                price: 850000,
-                image: "https://nndesign.vn/wp-content/uploads/2022/02/khoa-hoc-python-cho-nguoi-moi-bat-dau.jpg",
-                category: "Data Science",
-                teacher: "Văn Dũng Admin"
-            },
-            {
-                title: "Tiếng Anh cho lập trình viên",
-                description: "Cải thiện khả năng đọc tài liệu và giao tiếp trong môi trường IT.",
-                price: 450000,
-                image: "https://topicanative.edu.vn/wp-content/uploads/2020/08/tieng-anh-cho-lap-trinh-vien.jpg",
-                category: "Soft Skills",
-                teacher: "Văn Dũng Admin"
-            }
-        ]);
-
-        // 3. TẠO BÀI HỌC MẪU
-        const lessonData = [
-            { title: "Giới thiệu React & JSX", description: "Hiểu về DOM ảo và cách React render", videoUrl: "https://www.youtube.com/watch?v=RGKi6LSPDLU", courseId: courses[0]._id },
-            { title: "React Hooks căn bản", description: "Sử dụng useState & useEffect hiệu quả", videoUrl: "https://www.youtube.com/watch?v=TNhaISOUy6Q", courseId: courses[0]._id },
-            { title: "Redux Toolkit", description: "Quản lý state toàn cục cho ứng dụng lớn", videoUrl: "https://www.youtube.com/watch?v=9boMnmzDx9Q", courseId: courses[0]._id },
-            { title: "Kiến trúc NodeJS", description: "Event Loop và Non-blocking I/O", videoUrl: "https://www.youtube.com/watch?v=6m8SshXvW5E", courseId: courses[1]._id },
-            { title: "Kết nối MongoDB", description: "Sử dụng Mongoose ODM", videoUrl: "https://www.youtube.com/watch?v=WDrU305J1yw", courseId: courses[1]._id },
-            { title: "Làm quen với Figma", description: "Các công cụ vẽ vector cơ bản", videoUrl: "https://www.youtube.com/watch?v=c9Wg6ndoxpI", courseId: courses[2]._id },
-            { title: "Nguyên lý màu sắc", description: "Cách phối màu trong thiết kế hiện đại", videoUrl: "https://www.youtube.com/watch?v=GyV_UG60dD4", courseId: courses[2]._id },
-            { title: "Python Syntax cơ bản", description: "Biến, vòng lặp và hàm", videoUrl: "https://www.youtube.com/watch?v=rfscVS0vtbw", courseId: courses[3]._id },
-            { title: "Thư viện Pandas", description: "Xử lý bảng dữ liệu cực lớn", videoUrl: "https://www.youtube.com/watch?v=vmEHCJofslg", courseId: courses[3]._id },
-            { title: "Từ vựng chuyên ngành IT", description: "Các thuật ngữ hay dùng trong coding", videoUrl: "https://www.youtube.com/watch?v=5_f869n8GDM", courseId: courses[4]._id },
-            { title: "Đọc hiểu Documentation", description: "Mẹo đọc tài liệu API nhanh chóng", videoUrl: "https://www.youtube.com/watch?v=7PInS-GIdH4", courseId: courses[4]._id }
-        ];
-
-        await Lesson.insertMany(lessonData);
-
-        // 4. TẠO REVIEW MẪU
-        await Review.insertMany([
-            { courseId: courses[0]._id, userId: normalUser._id, rating: 5, comment: "Khóa học React chất lượng quá thầy ơi!" },
-            { courseId: courses[1]._id, userId: normalUser._id, rating: 4, comment: "Backend dạy rất kỹ, mong thầy thêm phần Docker." }
-        ]);
-
-        // 5. CẬP NHẬT TRẠNG THÁI USER ĐỂ DEMO
-        await User.findByIdAndUpdate(normalUser._id, {
-            enrolledCourses: [courses[0]._id]
-        });
-
-        console.log("-----------------------------------------");
-        console.log("✅ SEED DỮ LIỆU THÀNH CÔNG!");
-        console.log(`👤 User: student@gmail.com / 123456 (Role: 0)`);
-        console.log(`🔑 Admin: admin@gmail.com / 123456 (Role: 1)`);
-        console.log("-----------------------------------------");
+        // 1. TẠO ADMIN & 30 HỌC VIÊN THẬT (Tăng số lượng học viên để phân phối)
+        console.log("👥 Đang tạo đội ngũ học viên...");
+        await User.create({ name: "Văn Dũng Admin", email: "admin@gmail.com", password: hashPassword, role: 1 });
         
+        const students = [];
+        for (let i = 1; i <= 30; i++) {
+            const student = await User.create({
+                name: `Học viên ${i}`,
+                email: `student${i}@gmail.com`,
+                password: hashPassword,
+                role: 0
+            });
+            students.push(student);
+        }
+
+        // 2. TẠO 50 KHÓA HỌC CHẤT LƯỢNG CAO
+        console.log("📚 Đang thiết kế 50 khóa học...");
+        const categories = ["Web Development", "Backend", "Design", "Data Science", "Mobile App"];
+        const subjects = ["ReactJS Master", "NodeJS Expert", "Python Data", "Figma UI/UX", "Flutter Mobile", "Java Spring", "Next.js 14", "VueJS 3"];
+
+        const createdCourses = [];
+        for (let i = 1; i <= 50; i++) {
+            const randomSubject = subjects[Math.floor(Math.random() * subjects.length)];
+            const course = await Course.create({
+                title: `${randomSubject} - Khóa học thực chiến #${i}`,
+                description: `Đây là khóa học ${randomSubject} được thiết kế dành cho người mới bắt đầu đến nâng cao. Bao gồm dự án thực tế và hỗ trợ 24/7.`,
+                price: Math.floor(Math.random() * (1200000 - 300000) + 300000),
+                image: `https://picsum.photos/seed/edu${i}/600/400`,
+                category: categories[Math.floor(Math.random() * categories.length)],
+                teacher: "Văn Dũng Admin",
+                studentCount: 0 // Sẽ được cập nhật chính xác qua Payment
+            });
+            createdCourses.push(course);
+        }
+
+        // 3. TẠO BÀI HỌC (Mỗi khóa có 6 bài học - Tổng 300 bài)
+        console.log("📖 Đang soạn thảo bài giảng cho từng khóa...");
+        const youtubeIds = ["RGKi6LSPDLU", "TNhaISOUy6Q", "9boMnmzDx9Q", "6m8SshXvW5E", "WDrU305J1yw", "rfscVS0vtbw"];
+        
+        const lessonsPromises = createdCourses.flatMap(course => {
+            return [1, 2, 3, 4, 5, 6].map(j => ({
+                title: `Chương ${j}: Kiến thức cốt lõi về ${course.title.split(' ')[0]}`,
+                description: `Trong bài học này chúng ta sẽ tìm hiểu sâu về kỹ thuật và cách ứng dụng thực tế phần ${j}.`,
+                video_id: youtubeIds[j - 1],
+                courseId: course._id
+            }));
+        });
+        await Lesson.insertMany(lessonsPromises);
+
+        // 4. PHÂN PHỐI HỌC VIÊN & TẠO DOANH THU (Quan trọng nhất)
+        console.log("💰 Đang phân phối học viên và tạo lịch sử thanh toán...");
+        const now = new Date();
+
+        for (const course of createdCourses) {
+            // Mỗi khóa học sẽ có từ 8 đến 15 học viên ngẫu nhiên từ danh sách 30 người trên
+            const numberOfStudentsForThisCourse = Math.floor(Math.random() * (15 - 8 + 1) + 8);
+            
+            // Xáo trộn danh sách học viên và lấy ra số lượng cần thiết
+            const shuffledStudents = [...students].sort(() => 0.5 - Math.random());
+            const selectedStudents = shuffledStudents.slice(0, numberOfStudentsForThisCourse);
+
+            for (const student of selectedStudents) {
+                // Tạo Payment (Doanh thu)
+                const randomDay = Math.floor(Math.random() * now.getDate()) + 1;
+                const orderDate = new Date(now.getFullYear(), now.getMonth(), randomDay);
+
+                await Payment.create({
+                    user_id: student._id,
+                    name: student.name,
+                    email: student.email,
+                    paymentID: `PAY-${course._id.toString().slice(-4)}-${student._id.toString().slice(-4)}`,
+                    cart: [course],
+                    total: course.price,
+                    createdAt: orderDate
+                });
+
+                // Cập nhật User (Quyền học tập)
+                await User.findByIdAndUpdate(student._id, {
+                    $addToSet: { enrolledCourses: course._id }
+                });
+
+                // Tăng studentCount thực tế cho Course
+                await Course.findByIdAndUpdate(course._id, {
+                    $inc: { studentCount: 1 }
+                });
+            }
+
+            // 5. TẠO REVIEW (Mỗi khóa có 3-6 đánh giá)
+            const numReviews = Math.floor(Math.random() * 4) + 3;
+            const comments = [
+                "Khóa học rất hay, giảng viên nhiệt tình!",
+                "Kiến thức thực chiến, áp dụng được ngay vào công việc.",
+                "Video chất lượng, bài giảng dễ hiểu.",
+                "Hài lòng với số tiền bỏ ra.",
+                "Khóa học này đỉnh thật sự, mọi người nên mua nhé."
+            ];
+
+            for (let k = 0; k < numReviews; k++) {
+                await Review.create({
+                    courseId: course._id,
+                    userId: selectedStudents[k]._id,
+                    rating: Math.random() > 0.2 ? 5 : 4, // 80% là 5 sao, 20% là 4 sao cho thực tế
+                    comment: comments[Math.floor(Math.random() * comments.length)]
+                });
+            }
+        }
+
+        console.log("-----------------------------------------");
+        console.log("✅ HỆ THỐNG ĐÃ SẴN SÀNG VỚI DỮ LIỆU THỰC!");
+        console.log(`- 50 Khóa học (Mỗi khóa ~10-15 học viên thật)`);
+        console.log(`- 300 Bài học (Mỗi khóa 6 bài giảng)`);
+        console.log(`- ~500 Giao dịch thanh toán (Doanh thu cực khủng)`);
+        console.log(`- ~200 Đánh giá chất lượng`);
+        console.log("-----------------------------------------");
         process.exit();
     } catch (error) {
-        console.error("❌ Lỗi thực thi seed:", error.message);
+        console.error("❌ Lỗi thực thi seed:", error);
         process.exit(1);
     }
 };

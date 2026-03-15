@@ -60,4 +60,8 @@ router.get('/all_info', auth, authAdmin, userCtrl.getUsersAllInfor);
 // Đường dẫn: PATCH /api/users/update_role/:id
 router.patch('/update_role/:id', auth, authAdmin, userCtrl.updateRole);
 
+router.get('/admin_stats', auth, authAdmin, userCtrl.getAdminStats);
+
+router.get('/course_performance', auth, authAdmin, userCtrl.getCoursePerformanceStats);
+
 module.exports = router;

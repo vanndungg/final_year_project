@@ -1,94 +1,256 @@
-import React, { useContext } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { GlobalState } from '../../GlobalState';
 import axiosClient from '../../api/axiosClient';
 import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom';
-import AdminLayout from '../../components/AdminLayout';
+import AdminPanelLayout from '../../components/AdminPanelLayout';
 
 const AdminCourses = () => {
     const state = useContext(GlobalState);
-    
-    if (!state) return <div className="p-10 text-center italic">Đang tải dữ liệu...</div>;
+    const [courses = []] = state?.coursesAPI?.courses || [[]];
+    const [token = ''] = state?.token || [''];
+    const [callback = false, setCallback] = state?.coursesAPI?.callback || [false, () => {}];
 
-    const coursesAPI = state.coursesAPI || {};
-    const [courses] = coursesAPI.courses || [[]]; 
-    const [token] = state.token || [];
-    const [callback, setCallback] = coursesAPI.callback || [false, () => {}];
+    const [searchTerm, setSearchTerm] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('All Categories');
+    const [statusFilter, setStatusFilter] = useState('All Status');
+
+    const safeCourses = useMemo(() => (Array.isArray(courses) ? courses : []), [courses]);
+
+    const getStudentCount = (course) => {
+        const numericCandidates = [
+            course?.studentCount,
+            course?.studentsEnrolled,
+            course?.totalStudents,
+            course?.enrolledCount,
+            course?.enrolled
+        ];
+
+        for (const value of numericCandidates) {
+            if (value !== null && value !== undefined && Number.isFinite(Number(value))) {
+                return Number(value);
+            }
+        }
+
+        if (Array.isArray(course?.enrolledStudents)) return course.enrolledStudents.length;
+        if (Array.isArray(course?.students)) return course.students.length;
+        return 0;
+    };
+
+    const getLessonCount = (course) => {
+        const numericCandidates = [course?.lessonCount, course?.lessonsCount, course?.totalLessons];
+
+        for (const value of numericCandidates) {
+            if (value !== null && value !== undefined && Number.isFinite(Number(value))) {
+                return Number(value);
+            }
+        }
+
+        if (Array.isArray(course?.lessons)) return course.lessons.length;
+        return 0;
+    };
+
+    const categories = useMemo(() => {
+        const values = new Set();
+        safeCourses.forEach((course) => {
+            if (course?.category) values.add(course.category);
+        });
+
+        return ['All Categories', ...Array.from(values)];
+    }, [safeCourses]);
+
+    const filteredCourses = useMemo(() => {
+        const normalizedSearch = searchTerm.trim().toLowerCase();
+
+        return safeCourses.filter((course) => {
+            const title = course?.title?.toLowerCase() || '';
+            const category = course?.category || 'General';
+            const normalizedCategory = category.toLowerCase();
+            const status = (course?.status || 'published').toLowerCase();
+
+            const matchesSearch = !normalizedSearch ||
+                title.includes(normalizedSearch) ||
+                normalizedCategory.includes(normalizedSearch);
+            const matchesCategory = categoryFilter === 'All Categories' || category === categoryFilter;
+            const matchesStatus = statusFilter === 'All Status' || status === statusFilter.toLowerCase();
+
+            return matchesSearch && matchesCategory && matchesStatus;
+        });
+    }, [safeCourses, searchTerm, categoryFilter, statusFilter]);
+
+    const totalCourses = safeCourses.length;
+    const hasStatusData = safeCourses.some((course) => typeof course?.status === 'string' && course.status.trim() !== '');
+    const activeCourses = hasStatusData
+        ? safeCourses.filter((course) => (course?.status || '').toLowerCase() !== 'draft').length
+        : totalCourses;
+    const totalLessons = safeCourses.reduce((sum, course) => sum + getLessonCount(course), 0);
+    const totalStudents = safeCourses.reduce((sum, course) => sum + getStudentCount(course), 0);
 
     const deleteCourse = async (id) => {
-        if (window.confirm("❗ Bạn có chắc chắn muốn xóa khóa học này không?")) {
+        if (!token) {
+            toast.error('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.');
+            return;
+        }
+
+        if (window.confirm('Ban co chac chan muon xoa khoa hoc nay khong?')) {
             try {
                 const res = await axiosClient.delete(`/courses/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                toast.success(res.data.msg || "Xóa thành công!");
-                setCallback(!callback); 
+                toast.success(res.data.msg || 'Xoa thanh cong!');
+                setCallback(!callback);
             } catch (err) {
-                toast.error(err.response?.data?.msg || "Lỗi khi xóa");
+                toast.error(err.response?.data?.msg || 'Loi khi xoa');
             }
         }
     };
 
     return (
-        <AdminLayout>
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <div>
-                    <h1 className="text-3xl font-black text-gray-800 uppercase tracking-tight">Danh sách Khóa học</h1>
-                    <p className="text-gray-500 text-sm mt-1">Cập nhật và điều chỉnh nội dung đào tạo</p>
-                </div>
-                <Link to="/admin/create_course" className="bg-green-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-green-700 transition shadow-lg flex items-center gap-2">
-                    <span>+</span> Thêm khóa học mới
-                </Link>
-            </div>
+        <AdminPanelLayout>
+            <div className="p-8 space-y-8">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Course Management</h2>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Manage your curriculum and track course performance.</p>
+                        </div>
+                        <Link to="/admin/create_course" className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-slate-950 font-bold rounded-lg hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20">
+                            <span className="material-symbols-outlined text-xl">add</span>
+                            Add New Course
+                        </Link>
+                    </div>
 
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
-                <table className="w-full text-left border-collapse">
-                    <thead className="bg-gray-50 border-b border-gray-100">
-                        <tr>
-                            <th className="p-5 font-bold text-gray-600 uppercase text-[10px] tracking-widest">Hình ảnh</th>
-                            <th className="p-5 font-bold text-gray-600 uppercase text-[10px] tracking-widest">Thông tin khóa học</th>
-                            <th className="p-5 font-bold text-gray-600 uppercase text-[10px] tracking-widest">Giá bán</th>
-                            <th className="p-5 font-bold text-gray-600 uppercase text-[10px] tracking-widest text-center">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {courses && courses.length > 0 ? (
-                            courses.map(course => (
-                                <tr key={course._id} className="border-b border-gray-50 hover:bg-blue-50/20 transition group">
-                                    <td className="p-5">
-                                        <img 
-                                            src={course.image?.url || course.image} 
-                                            alt="" 
-                                            className="w-24 h-14 object-cover rounded-xl shadow-sm border border-gray-100 group-hover:scale-105 transition-all" 
-                                        />
-                                    </td>
-                                    <td className="p-5">
-                                        <div className="font-bold text-gray-800 text-lg group-hover:text-blue-600 transition-colors">{course.title}</div>
-                                        <div className="text-[10px] font-mono text-gray-400">UID: {course._id}</div>
-                                    </td>
-                                    <td className="p-5">
-                                        <span className={`px-3 py-1 rounded-lg font-bold text-sm ${course.price === 0 ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"}`}>
-                                            {course.price === 0 ? "MIỄN PHÍ" : `${course.price?.toLocaleString()}đ`}
-                                        </span>
-                                    </td>
-                                    <td className="p-5">
-                                        <div className="flex justify-center items-center gap-4">
-                                            <Link to={`/admin/edit_course/${course._id}`} className="text-blue-600 hover:text-blue-800 font-bold text-sm">Sửa</Link>
-                                            <button onClick={() => deleteCourse(course._id)} className="text-red-600 hover:text-red-800 font-bold text-sm">Xóa</button>
-                                            <Link to={`/admin/lessons/${course._id}`} className="bg-gray-100 text-gray-700 px-4 py-1.5 rounded-lg text-[10px] font-black hover:bg-gray-800 hover:text-white transition">NỘI DUNG 🎬</Link>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="4" className="p-20 text-center text-gray-400 italic font-medium">Đang tải danh sách khóa học...</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Courses</p>
+                            <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalCourses}</p>
+                        </div>
+                        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Active Courses</p>
+                            <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{activeCourses}</p>
+                        </div>
+                        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Lessons</p>
+                            <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalLessons.toLocaleString()}</p>
+                        </div>
+                        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Students</p>
+                            <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalStudents.toLocaleString()}</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-wrap gap-4 items-center">
+                        <div className="flex-1 min-w-[260px] relative">
+                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                            <input
+                                className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all"
+                                placeholder="Search by course name..."
+                                type="text"
+                                value={searchTerm}
+                                onChange={(event) => setSearchTerm(event.target.value)}
+                            />
+                        </div>
+                        <select
+                            className="bg-slate-100 dark:bg-slate-800 border-none rounded-lg py-2 pl-4 pr-10 text-sm focus:ring-2 focus:ring-primary/20 text-slate-600 dark:text-slate-400"
+                            value={categoryFilter}
+                            onChange={(event) => setCategoryFilter(event.target.value)}
+                        >
+                            {categories.map((category) => (
+                                <option key={category} value={category}>{category}</option>
+                            ))}
+                        </select>
+                        <select
+                            className="bg-slate-100 dark:bg-slate-800 border-none rounded-lg py-2 pl-4 pr-10 text-sm focus:ring-2 focus:ring-primary/20 text-slate-600 dark:text-slate-400"
+                            value={statusFilter}
+                            onChange={(event) => setStatusFilter(event.target.value)}
+                        >
+                            <option>All Status</option>
+                            <option>Published</option>
+                            <option>Draft</option>
+                        </select>
+                        <Link to="/coming-soon" className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                            <span className="material-symbols-outlined text-lg">filter_list</span>
+                            More Filters
+                        </Link>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Course Name</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Category</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Students</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Lessons</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Last Updated</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {filteredCourses.length > 0 ? (
+                                        filteredCourses.map((course) => {
+                                            const status = (course?.status || 'published').toLowerCase();
+                                            const isDraft = status === 'draft';
+                                            const studentCount = getStudentCount(course);
+                                            const lessonCount = getLessonCount(course);
+
+                                            return (
+                                                <tr key={course._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="size-12 rounded-lg bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0">
+                                                                <img src={course.image?.url || course.image} alt={course.title || 'course'} className="w-full h-full object-cover" />
+                                                            </div>
+                                                            <div className="max-w-[220px]">
+                                                                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{course.title}</p>
+                                                                <p className="text-xs text-slate-500 truncate">{course.description || 'Course description'}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{course.category || 'General'}</td>
+                                                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{studentCount.toLocaleString()}</td>
+                                                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{lessonCount.toLocaleString()}</td>
+                                                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{new Date(course.updatedAt || course.createdAt).toLocaleDateString()}</td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${isDraft ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
+                                                            <span className={`size-1.5 rounded-full ${isDraft ? 'bg-amber-500' : 'bg-green-500'}`}></span>
+                                                            {isDraft ? 'Draft' : 'Published'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right space-x-1">
+                                                        <Link to={`/detail/${course._id}`} className="p-2 text-slate-400 hover:text-primary transition-colors" title="View">
+                                                            <span className="material-symbols-outlined text-[20px]">visibility</span>
+                                                        </Link>
+                                                        <Link to={`/admin/edit_course/${course._id}`} className="p-2 text-slate-400 hover:text-primary transition-colors" title="Edit">
+                                                            <span className="material-symbols-outlined text-[20px]">edit</span>
+                                                        </Link>
+                                                        <Link to={`/admin/lessons/${course._id}`} className="p-2 text-slate-400 hover:text-blue-500 transition-colors" title="Lessons">
+                                                            <span className="material-symbols-outlined text-[20px]">book_5</span>
+                                                        </Link>
+                                                        <button onClick={() => deleteCourse(course._id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Delete">
+                                                            <span className="material-symbols-outlined text-[20px]">delete</span>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="7" className="px-6 py-20 text-center text-slate-500 dark:text-slate-400">No courses found</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800">
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                                Showing <span className="font-bold text-slate-900 dark:text-white">{filteredCourses.length}</span> of <span className="font-bold text-slate-900 dark:text-white">{totalCourses}</span> courses
+                            </p>
+                        </div>
+                    </div>
             </div>
-        </AdminLayout>
+        </AdminPanelLayout>
     );
 };
 

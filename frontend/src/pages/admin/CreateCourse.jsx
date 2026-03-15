@@ -15,35 +15,38 @@ const initialState = {
 const CreateCourse = () => {
     const state = useContext(GlobalState);
     const [course, setCourse] = useState(initialState);
-    const [token] = state.token;
-    const [courses] = state.coursesAPI.courses;
-    const [callback, setCallback] = state.coursesAPI.callback;
+    const [token = ''] = state?.token || [''];
+    const [callback = false, setCallback] = state?.coursesAPI?.callback || [false, () => {}];
 
     const navigate = useNavigate();
     const param = useParams(); // Lấy ID từ URL: /admin/edit_course/:id
 
-    const [onEdit, setOnEdit] = useState(false);
+    const onEdit = Boolean(param.id);
 
     // 1. Kiểm tra nếu có ID trên URL thì đổ dữ liệu cũ vào Form
     useEffect(() => {
-        if (param.id) {
-            setOnEdit(true);
-            courses.forEach(item => {
-                if (item._id === param.id) {
-                    setCourse({
-                        title: item.title,
-                        description: item.description,
-                        price: item.price,
-                        category: item.category,
-                        _id: item._id
-                    });
-                }
-            });
-        } else {
-            setOnEdit(false);
-            setCourse(initialState);
-        }
-    }, [param.id, courses]);
+        if (!onEdit) return;
+
+        const getCourseDetail = async () => {
+            try {
+                const res = await axiosClient.get(`/courses/${param.id}`);
+                const foundCourse = res.data;
+
+                setCourse({
+                    title: foundCourse.title,
+                    description: foundCourse.description,
+                    price: foundCourse.price,
+                    category: foundCourse.category,
+                    _id: foundCourse._id
+                });
+            } catch (err) {
+                toast.error(err.response?.data?.msg || 'Khong tai duoc du lieu khoa hoc');
+                navigate('/admin/courses');
+            }
+        };
+
+        getCourseDetail();
+    }, [onEdit, param.id, navigate]);
 
     const handleChangeInput = e => {
         const { name, value } = e.target;
@@ -53,6 +56,10 @@ const CreateCourse = () => {
     // 2. Hàm xử lý khi bấm nút "Cập nhật" hoặc "Tạo mới"
     const handleSubmit = async e => {
         e.preventDefault();
+        if (!token) {
+            toast.error('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.');
+            return;
+        }
         try {
             if (onEdit) {
                 // GỌI API CẬP NHẬT (PUT)

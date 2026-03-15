@@ -1,27 +1,23 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useEffect } from 'react';
 import axiosClient from './api/axiosClient';
 
 export const GlobalState = createContext();
 
 export const DataProvider = ({ children }) => {
-    const [token, setToken] = useState(false);
+    const [token, setToken] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        const firstLogin = localStorage.getItem('firstLogin');
+        if (firstLogin) {
+            return localStorage.getItem('access_token') || false;
+        }
+        return false;
+    });
     const [isLogged, setIsLogged] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false); // 🆕 Thêm state kiểm tra Admin
     const [user, setUser] = useState(null);
     const [courses, setCourses] = useState([]);
     const [callback, setCallback] = useState(false);
-
-    // 1. Kiểm tra đăng nhập khi F5 trang web
-    useEffect(() => {
-        const firstLogin = localStorage.getItem('firstLogin');
-        if (firstLogin) {
-            const accessToken = localStorage.getItem('access_token');
-            if (accessToken) {
-                setToken(accessToken);
-                // Lưu ý: Chưa set isLogged ở đây vì đợi getUserInfo xác thực cho chắc chắn
-            }
-        }
-    }, []);
 
     // 2. Lấy thông tin User khi có Token
     useEffect(() => {

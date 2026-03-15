@@ -1,8 +1,103 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { GlobalState } from '../GlobalState';
 import { toast } from 'react-toastify';
+
+const filledStarStyle = { fontVariationSettings: "'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24" };
+const outlineStarStyle = { fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" };
+
+const getRatingLabel = (value) => {
+    switch (value) {
+        case 1:
+            return 'Rất tệ';
+        case 2:
+            return 'Chưa tốt';
+        case 3:
+            return 'Ổn';
+        case 4:
+            return 'Tốt';
+        case 5:
+            return 'Xuất sắc';
+        default:
+            return 'Chọn số sao phù hợp';
+    }
+};
+
+const renderRatingStars = (value, sizeClass = 'text-sm') => (
+    <div className="flex items-center gap-0.5">
+        {Array.from({ length: 5 }, (_, index) => {
+            const star = index + 1;
+            const isFull = value >= star;
+            const isHalf = !isFull && value >= star - 0.5;
+
+            return (
+                <span
+                    key={star}
+                    className={`material-symbols-outlined ${sizeClass} ${isFull || isHalf ? 'text-amber-500' : 'text-slate-300 dark:text-slate-600'}`}
+                    style={isFull || isHalf ? filledStarStyle : outlineStarStyle}
+                >
+                    {isHalf ? 'star_half' : 'star'}
+                </span>
+            );
+        })}
+    </div>
+);
+
+const formatRelativeReviewDate = (value) => {
+    if (!value) return 'Vừa xong';
+
+    const diffMs = Date.now() - new Date(value).getTime();
+    const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
+
+    if (diffMinutes < 60) return `${diffMinutes} phút trước`;
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+
+    const diffWeeks = Math.floor(diffDays / 7);
+    if (diffWeeks < 5) return `${diffWeeks} tuần trước`;
+
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) return `${diffMonths} tháng trước`;
+
+    const diffYears = Math.floor(diffDays / 365);
+    return `${diffYears} năm trước`;
+};
+
+const getInitials = (name) => {
+    if (!name) return 'HV';
+
+    return name
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join('')
+        .toUpperCase();
+};
+
+const getStudentCount = (course) => {
+    const numericCandidates = [
+        course?.studentCount,
+        course?.studentsEnrolled,
+        course?.totalStudents,
+        course?.enrolledCount
+    ];
+
+    for (const value of numericCandidates) {
+        if (value !== null && value !== undefined && Number.isFinite(Number(value))) {
+            return Number(value);
+        }
+    }
+
+    if (Array.isArray(course?.enrolledStudents)) return course.enrolledStudents.length;
+    if (Array.isArray(course?.students)) return course.students.length;
+    return 0;
+};
 
 const DetailCourse = () => {
     const params = useParams();
@@ -17,10 +112,13 @@ const DetailCourse = () => {
     const [lessons, setLessons] = useState([]);
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [submittingReview, setSubmittingReview] = useState(false);
 
-    const [rating, setRating] = useState(5);
+    const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
     const [callback, setCallback] = useState(false);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [showAllReviews, setShowAllReviews] = useState(false);
 
     useEffect(() => {
         if (params.id) {
@@ -36,7 +134,8 @@ const DetailCourse = () => {
 
                     const resReviews = await axiosClient.get(`/reviews/${params.id}`);
                     setReviews(resReviews.data);
-                } catch (err) {
+                } catch (error) {
+                    console.error('Failed to load course details', error);
                     toast.error("Không thể tải dữ liệu khóa học");
                 }
             };
@@ -65,6 +164,25 @@ const DetailCourse = () => {
 
     const submitReview = async (e) => {
         e.preventDefault();
+
+        if (!isLogged) {
+            toast.error('Vui lòng đăng nhập để gửi đánh giá');
+            navigate('/login');
+            return;
+        }
+
+        if (!isEnrolled) {
+            toast.error('Bạn cần sở hữu khóa học trước khi gửi đánh giá');
+            return;
+        }
+
+        if (!rating || !comment.trim()) {
+            toast.error('Vui lòng chọn số sao và nhập nội dung đánh giá');
+            return;
+        }
+
+        setSubmittingReview(true);
+
         try {
             await axiosClient.post('/reviews', 
                 { courseId: course._id, rating, comment },
@@ -72,27 +190,82 @@ const DetailCourse = () => {
             );
             toast.success("Đã gửi đánh giá!");
             setComment('');
-            setRating(5);
-            setCallback(!callback);
+            setRating(0);
+            setHoverRating(0);
+            setShowAllReviews(true);
+            setCallback((prev) => !prev);
         } catch (err) {
             toast.error(err.response?.data?.msg || "Lỗi gửi đánh giá");
+        } finally {
+            setSubmittingReview(false);
         }
     };
 
     if (!course) return <div className="text-center py-20 italic">Đang tải dữ liệu...</div>;
 
-    const isEnrolled = user?.enrolledCourses?.some(item => (item._id || item) === course._id);
+    const isEnrolled = user?.enrolledCourses?.some((item) => String(item._id || item) === String(course._id));
+    const activeRating = hoverRating || rating;
+    const reviewCount = reviews.length;
+    const averageRating = reviewCount > 0
+        ? reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / reviewCount
+        : Number(course.avgRating || 0);
+    const studentCount = getStudentCount(course);
+    const visibleReviews = showAllReviews ? reviews : reviews.slice(0, 4);
+    const canInteractWithReviewForm = isLogged && isEnrolled;
+    const reviewButtonLabel = !isLogged
+        ? 'Đăng nhập để đánh giá'
+        : !isEnrolled
+            ? 'Sở hữu khóa học để đánh giá'
+            : submittingReview
+                ? 'Đang gửi...'
+                : 'Gửi đánh giá';
+    const ratingBreakdown = [5, 4, 3, 2, 1].map((star) => {
+        const count = reviews.filter((review) => Math.round(Number(review.rating || 0)) === star).length;
+        const percentage = reviewCount > 0 ? Math.round((count / reviewCount) * 100) : 0;
+
+        return { star, percentage };
+    });
 
     return (
         <div className="container mx-auto px-4 py-10">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 <div className="lg:col-span-2">
-                    <img src={course.image.url || course.image} alt={course.title} className="w-full h-96 object-cover rounded-2xl shadow-lg mb-8" />
+                    <nav className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-6">
+                        <Link className="hover:text-primary" to="/">Home</Link>
+                        <span className="material-symbols-outlined text-xs">chevron_right</span>
+                        <Link className="hover:text-primary" to="/courses">Courses</Link>
+                        <span className="material-symbols-outlined text-xs">chevron_right</span>
+                        <span className="text-slate-900 dark:text-slate-200">{course.title}</span>
+                    </nav>
+
+                    <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-900 group shadow-2xl mb-8">
+                        <div
+                            className="absolute inset-0 bg-cover bg-center opacity-70 group-hover:scale-105 transition-transform duration-700"
+                            style={{ backgroundImage: `url('${course.image.url || course.image}')` }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        <button className="absolute inset-0 flex items-center justify-center group/btn">
+                            <div className="size-20 bg-primary rounded-full flex items-center justify-center text-white shadow-xl group-hover/btn:scale-110 transition-transform">
+                                <span className="material-symbols-outlined text-4xl fill-1">play_arrow</span>
+                            </div>
+                        </button>
+                        <div className="absolute bottom-6 left-6 right-6">
+                            <p className="text-white font-medium mb-2">Watch Course Intro</p>
+                            <div className="w-full h-1.5 bg-white/30 rounded-full overflow-hidden">
+                                <div className="w-1/3 h-full bg-primary" />
+                            </div>
+                        </div>
+                    </div>
                     <h1 className="text-4xl font-extrabold text-gray-900 mb-4">{course.title}</h1>
                     
-                    <div className="flex items-center gap-6 mb-8 text-gray-600">
-                        <span className="flex items-center"><i className="fas fa-star text-yellow-500 mr-2"></i>{course.avgRating || 0} / 5</span>
-                        <span className="flex items-center"><i className="fas fa-user-graduate text-blue-500 mr-2"></i>{course.studentCount || 0} Học viên</span>
+                    <div className="flex flex-wrap items-center gap-4 mb-8 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                            <span className="font-bold text-amber-500">{averageRating.toFixed(1)}</span>
+                            {renderRatingStars(averageRating, 'text-base')}
+                            <span className="text-gray-500">({reviewCount} đánh giá)</span>
+                        </div>
+                        <span className="text-gray-400">•</span>
+                        <span className="flex items-center"><i className="fas fa-user-graduate text-blue-500 mr-2"></i>{studentCount.toLocaleString()} học viên</span>
                     </div>
 
                     <h2 className="text-2xl font-bold mb-4 border-l-4 border-blue-600 pl-4">Mô tả khóa học</h2>
@@ -125,42 +298,141 @@ const DetailCourse = () => {
                         </div>
                     </div>
 
-                    <div className="mt-16">
-                        <h2 className="text-2xl font-bold mb-8 flex items-center"><i className="fas fa-comments mr-3 text-green-600"></i>Đánh giá từ cộng đồng</h2>
-                        {isEnrolled ? (
-                            <form onSubmit={submitReview} className="mb-10 bg-white p-6 rounded-2xl border-2 border-dashed border-blue-200 shadow-sm">
-                                <h3 className="font-bold mb-4 text-gray-800">Để lại cảm nghĩ của bạn</h3>
-                                <div className="flex gap-2 mb-4 text-xl">
-                                    {[1, 2, 3, 4, 5].map(num => (
-                                        <i key={num} className={`cursor-pointer fas fa-star ${rating >= num ? 'text-yellow-500' : 'text-gray-300'}`} onClick={() => setRating(num)}></i>
-                                    ))}
-                                </div>
-                                <textarea className="w-full p-4 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nội dung đánh giá..." value={comment} onChange={e => setComment(e.target.value)} required rows="3" />
-                                <button className="mt-4 px-6 py-2.5 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-all shadow-md">GỬI ĐÁNH GIÁ</button>
-                            </form>
-                        ) : (
-                            <div className="mb-10 p-4 bg-orange-50 text-orange-700 rounded-xl text-sm italic border border-orange-100">
-                                <i className="fas fa-info-circle mr-2"></i>Bạn cần sở hữu khóa học để đánh giá.
+                    <section className="mt-20 pt-10 border-t border-slate-200 dark:border-slate-800">
+                        <h2 className="text-2xl font-bold mb-8">Đánh giá từ học viên</h2>
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+                            <div className="col-span-1 flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800">
+                                <div className="text-5xl font-black text-slate-900 dark:text-white mb-2">{averageRating.toFixed(1)}</div>
+                                <div className="mb-2">{renderRatingStars(averageRating, 'text-xl')}</div>
+                                <div className="text-sm text-slate-500 font-medium">{reviewCount} đánh giá</div>
                             </div>
-                        )}
-                        <div className="space-y-6">
-                            {reviews.length > 0 ? reviews.map(rev => (
-                                <div key={rev._id} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold uppercase">{rev.userId?.name?.charAt(0) || "U"}</div>
-                                            <div>
-                                                <p className="font-bold text-gray-800">{rev.userId?.name || "Người dùng ẩn danh"}</p>
-                                                <div className="text-yellow-500 text-xs">{"⭐".repeat(rev.rating)}</div>
-                                            </div>
+
+                            <div className="col-span-1 md:col-span-3 space-y-3">
+                                {ratingBreakdown.map(({ star, percentage }) => (
+                                    <div key={star} className="flex items-center gap-4">
+                                        <span className="text-sm font-medium w-12">{star} sao</span>
+                                        <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                                            <div className="h-full bg-primary transition-all duration-300" style={{ width: `${percentage}%` }} />
                                         </div>
-                                        <span className="text-[10px] text-gray-400 font-medium italic">{new Date(rev.createdAt).toLocaleDateString('vi-VN')}</span>
+                                        <span className="text-sm text-slate-500 w-12">{percentage}%</span>
                                     </div>
-                                    <p className="text-gray-600 text-sm leading-relaxed pl-13">{rev.comment}</p>
-                                </div>
-                            )) : <p className="text-center text-gray-400 py-10 italic">Chưa có đánh giá.</p>}
+                                ))}
+                            </div>
                         </div>
-                    </div>
+
+                        <div className="mb-12 p-6 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl">
+                            <h3 className="text-lg font-bold mb-4">Viết đánh giá của bạn</h3>
+
+                            {!canInteractWithReviewForm && (
+                                <div className="mb-4 p-4 bg-orange-50 text-orange-700 rounded-xl text-sm italic border border-orange-100">
+                                    <i className="fas fa-info-circle mr-2"></i>
+                                    {!isLogged
+                                        ? 'Vui lòng đăng nhập và sở hữu khóa học để gửi đánh giá.'
+                                        : 'Bạn cần sở hữu khóa học để đánh giá.'}
+                                </div>
+                            )}
+
+                            <form onSubmit={submitReview} className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Xếp hạng của bạn</label>
+                                    <div className="flex gap-1 text-slate-300">
+                                        {Array.from({ length: 5 }, (_, index) => {
+                                            const star = index + 1;
+                                            const isSelected = star <= activeRating;
+
+                                            return (
+                                                <button
+                                                    key={star}
+                                                    type="button"
+                                                    onClick={() => canInteractWithReviewForm && setRating(star)}
+                                                    onMouseEnter={() => canInteractWithReviewForm && setHoverRating(star)}
+                                                    onMouseLeave={() => canInteractWithReviewForm && setHoverRating(0)}
+                                                    className={`transition-transform duration-150 ${canInteractWithReviewForm ? 'hover:scale-110' : 'cursor-not-allowed opacity-70'}`}
+                                                    aria-label={`Chọn ${star} sao`}
+                                                    disabled={!canInteractWithReviewForm}
+                                                >
+                                                    <span
+                                                        className={`material-symbols-outlined text-3xl ${isSelected ? 'text-amber-500' : 'text-slate-300 dark:text-slate-600'}`}
+                                                        style={isSelected ? filledStarStyle : outlineStarStyle}
+                                                    >
+                                                        star
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <p className="text-sm text-slate-500">
+                                        {activeRating > 0 ? `Bạn đang chọn ${activeRating} sao - ${getRatingLabel(activeRating)}` : 'Chọn từ 1 đến 5 sao'}
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="review-message">Lời nhắn của bạn</label>
+                                    <textarea
+                                        id="review-message"
+                                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-sm focus:ring-1 focus:ring-primary focus:border-primary placeholder:text-slate-400 outline-none disabled:cursor-not-allowed disabled:opacity-70"
+                                        placeholder="Nhập lời nhắn của bạn tại đây..."
+                                        rows="4"
+                                        value={comment}
+                                        onChange={(e) => setComment(e.target.value)}
+                                        disabled={!canInteractWithReviewForm}
+                                    />
+                                </div>
+
+                                <button
+                                    className="inline-flex items-center justify-center bg-amber-500 text-slate-950 px-6 py-2.5 rounded-lg text-sm font-bold shadow-md shadow-amber-500/20 transition-colors hover:bg-amber-600 disabled:bg-amber-300 disabled:text-slate-700 disabled:shadow-none disabled:cursor-not-allowed"
+                                    type="submit"
+                                    disabled={!canInteractWithReviewForm || !rating || !comment.trim() || submittingReview}
+                                >
+                                    {reviewButtonLabel}
+                                </button>
+                            </form>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {reviewCount === 0 ? (
+                                <p className="text-slate-500 italic md:col-span-2">Chưa có đánh giá nào cho khóa học này.</p>
+                            ) : (
+                                visibleReviews.map((review) => {
+                                    const reviewerName = review.userId?.name || 'Học viên';
+                                    const reviewerInitials = getInitials(reviewerName);
+
+                                    return (
+                                        <div key={review._id} className="space-y-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="size-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-600 dark:text-slate-200 overflow-hidden">
+                                                    {review.userId?.avatar ? (
+                                                        <img src={review.userId.avatar} alt={reviewerName} className="size-full object-cover" />
+                                                    ) : (
+                                                        reviewerInitials
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <h5 className="font-bold text-sm text-slate-900 dark:text-white">{reviewerName}</h5>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex text-amber-500">{renderRatingStars(Number(review.rating || 0), 'text-sm')}</div>
+                                                        <span className="text-[10px] text-slate-400 font-medium">{formatRelativeReviewDate(review.createdAt)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{review.comment}</p>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+
+                        {reviewCount > 4 && (
+                            <button
+                                type="button"
+                                onClick={() => setShowAllReviews((prev) => !prev)}
+                                className="mt-10 px-6 py-2 border border-primary text-primary text-sm font-bold rounded-lg hover:bg-primary/5 transition-colors mx-auto block"
+                            >
+                                {showAllReviews ? 'Thu gọn đánh giá' : 'Xem tất cả đánh giá'}
+                            </button>
+                        )}
+                    </section>
                 </div>
 
                 <div className="lg:col-span-1">

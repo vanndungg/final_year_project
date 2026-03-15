@@ -1,11 +1,12 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 
 // Import Components & Pages
 import Header from './components/Header';
+import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
+import Courses from './pages/Courses';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import DetailCourse from './pages/DetailCourse';
@@ -20,29 +21,35 @@ import CreateLesson from './pages/admin/CreateLesson';
 
 // 🆕 QUẢN LÝ TÀI KHOẢN (Thêm mới)
 import AdminUsers from './pages/admin/AdminUsers';
+import ComingSoon from './pages/ComingSoon';
+
+function AppLayout() {
+  return (
+    <>
+      <Header />
+      <main className="min-h-screen">
+        <Outlet />
+      </main>
+      <Footer />
+    </>
+  );
+}
 
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50 font-sans antialiased">
-        <ToastContainer position="top-right" autoClose={3000} />
-
+      <ScrollToTop />
+      <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
         <Routes>
-          {/* NHÓM 1: USER (Client Side) */}
-          <Route path="/*" element={
-            <>
-              <Header />
-              <main>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/detail/:id" element={<DetailCourse />} />
-                  <Route path="*" element={<div className="text-center p-20 font-bold text-gray-500">404 - Trang không tồn tại</div>} />
-                </Routes>
-              </main>
-            </>
-          } />
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/courses" element={<Courses />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/detail/:id" element={<DetailCourse />} />
+            <Route path="/coming-soon" element={<ComingSoon />} />
+            <Route path="*" element={<div className="text-center p-20 font-bold text-gray-500">404 - Trang không tồn tại</div>} />
+          </Route>
 
           {/* NHÓM 2: ADMIN PANEL (Protected Routes) */}
           <Route element={<AdminRoute />}>
