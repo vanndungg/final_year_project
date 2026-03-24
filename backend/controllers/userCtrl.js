@@ -144,6 +144,10 @@ const userCtrl = {
                 return prev + (item.price || 0);
             }, 0);
 
+            const couponCode = String(req.body?.couponCode || '').trim().toUpperCase();
+            const discount = couponCode === 'EDU50' ? Math.min(50000, total) : 0;
+            const finalTotal = Math.max(0, total - discount);
+
             // Lưu lịch sử giao dịch vào bảng Payments
             const newPayment = new Payments({
                 user_id: user._id,
@@ -151,7 +155,10 @@ const userCtrl = {
                 email: user.email,
                 paymentID: `PAY-${Date.now()}`, 
                 cart: user.cart,
-                total: total
+                subtotal: total,
+                discount,
+                couponCode,
+                total: finalTotal
             });
 
             await newPayment.save();
@@ -169,7 +176,13 @@ const userCtrl = {
                 });
             }
 
-            return res.json({ msg: "Thanh toán thành công!" });
+            return res.json({
+                msg: "Thanh toán thành công!",
+                subtotal: total,
+                discount,
+                couponCode,
+                total: finalTotal
+            });
         } catch (err) {
             return res.status(500).json({ msg: err.message });
         }

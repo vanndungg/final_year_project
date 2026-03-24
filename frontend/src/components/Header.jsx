@@ -12,6 +12,7 @@ function Header() {
     const [isLogged, setIsLogged] = userAPI?.isLogged || [false, () => {}];
     const [user] = userAPI?.user || [null];
     const [isAdmin] = userAPI?.isAdmin || [false];
+    const cartCount = Array.isArray(user?.cart) ? user.cart.length : 0;
 
     const searchTerm = useMemo(() => {
         const params = new URLSearchParams(location.search);
@@ -80,9 +81,14 @@ function Header() {
                             <span className="material-symbols-outlined text-lg">arrow_forward</span>
                         </button>
                     </form>
-                    <button className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                    <Link to="/checkout" className="relative p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
                         <span className="material-symbols-outlined">shopping_cart</span>
-                    </button>
+                        {cartCount > 0 && (
+                            <span className="absolute -top-1 -right-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                {cartCount}
+                            </span>
+                        )}
+                    </Link>
                     {isLogged ? (
                         <div className="flex items-center gap-4">
                             <span className="font-semibold text-slate-800 dark:text-slate-200">

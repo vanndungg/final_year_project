@@ -10,6 +10,7 @@ import Courses from './pages/Courses';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import DetailCourse from './pages/DetailCourse';
+import Checkout from './pages/Checkout';
 import AdminRoute from './components/AdminRoute'; 
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminCourses from './pages/admin/AdminCourses'; 
@@ -47,6 +48,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/detail/:id" element={<DetailCourse />} />
+            <Route path="/checkout" element={<Checkout />} />
             <Route path="/coming-soon" element={<ComingSoon />} />
             <Route path="*" element={<div className="text-center p-20 font-bold text-gray-500">404 - Trang không tồn tại</div>} />
           </Route>

@@ -110,7 +110,7 @@ const DetailCourse = () => {
     const state = useContext(GlobalState);
 
     const [token] = state.token;
-    const [user] = state.userAPI.user;
+    const [user, setUser] = state.userAPI.user;
     const [isLogged] = state.userAPI.isLogged;
 
     const [course, setCourse] = useState(null);
@@ -204,6 +204,7 @@ const DetailCourse = () => {
     }
 
     const isEnrolled = user?.enrolledCourses?.some((item) => String(item?._id || item) === String(course._id));
+    const isPaidCourse = Number(course?.price || 0) > 0;
     const isAdmin = Number(user?.role) === 1;
     const canStudy = isEnrolled || isAdmin;
     const activeRating = hoverRating || rating;
@@ -239,6 +240,53 @@ const DetailCourse = () => {
             setCallback((prev) => !prev);
         } catch (error) {
             toast.error(error.response?.data?.msg || 'Dang ky khoa hoc that bai');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAddToCartAndCheckout = async () => {
+        if (!isLogged) {
+            navigate('/login');
+            return;
+        }
+
+        const currentCart = Array.isArray(user?.cart) ? user.cart : [];
+        const existed = currentCart.some((item) => String(item?._id || item) === String(course._id));
+
+        if (existed) {
+            toast.info('Khoa hoc da co trong gio hang.');
+            navigate('/checkout');
+            return;
+        }
+
+        const nextCart = [
+            ...currentCart,
+            {
+                _id: course._id,
+                title: course.title,
+                image: course.image,
+                teacher: course.teacher || 'EduLearn Team',
+                description: course.description,
+                price: Number(course.price || 0)
+            }
+        ];
+
+        setLoading(true);
+        try {
+            await axiosClient.patch('/users/addcart', { cart: nextCart }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            const userRes = await axiosClient.get('/users/infor', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setUser(userRes.data);
+
+            toast.success('Da them khoa hoc vao gio hang.');
+            navigate('/checkout');
+        } catch (error) {
+            toast.error(error.response?.data?.msg || 'Khong the them vao gio hang.');
         } finally {
             setLoading(false);
         }
@@ -769,8 +817,12 @@ const DetailCourse = () => {
                                 <i className="fas fa-check-circle" /> DA SO HUU
                             </button>
                         ) : (
-                            <button onClick={handleEnrollment} disabled={loading} className="w-full rounded-2xl bg-blue-600 py-4 font-black text-white shadow-xl transition-all hover:bg-blue-700 active:scale-95">
-                                {loading ? 'DANG XU LY...' : 'DANG KY HOC NGAY'}
+                            <button
+                                onClick={isPaidCourse ? handleAddToCartAndCheckout : handleEnrollment}
+                                disabled={loading}
+                                className="w-full rounded-2xl bg-blue-600 py-4 font-black text-white shadow-xl transition-all hover:bg-blue-700 active:scale-95"
+                            >
+                                {loading ? 'DANG XU LY...' : (isPaidCourse ? 'MUA NGAY' : 'DANG KY HOC NGAY')}
                             </button>
                         )}
                     </div>
