@@ -4,6 +4,30 @@ import { GlobalState } from '../../GlobalState';
 import axiosClient from '../../api/axiosClient';
 import { toast } from 'react-toastify';
 
+const getLessonTypeMeta = (lessonTypeValue) => {
+    const normalizedType = String(lessonTypeValue || 'video').toLowerCase();
+
+    if (normalizedType === 'document') {
+        return { icon: 'description', label: 'Document', color: 'text-orange-500' };
+    }
+
+    if (normalizedType === 'quiz') {
+        return { icon: 'quiz', label: 'Quiz', color: 'text-green-600' };
+    }
+
+    if (normalizedType === 'assignment') {
+        return { icon: 'assignment', label: 'Assignment', color: 'text-violet-600' };
+    }
+
+    return { icon: 'play_circle', label: 'Video', color: 'text-blue-600' };
+};
+
+const normalizePublishStatus = (statusValue) => {
+    const normalizedStatus = String(statusValue || '').trim().toLowerCase();
+    if (normalizedStatus === 'publish' || normalizedStatus === 'published') return 'publish';
+    return 'draft';
+};
+
 const AdminLessons = () => {
     const params = useParams(); // Lấy courseId từ URL
     const state = useContext(GlobalState);
@@ -116,9 +140,24 @@ const AdminLessons = () => {
                                         <h3 className="font-bold text-gray-800 text-lg group-hover:text-blue-600 transition-colors">
                                             {lesson.title}
                                         </h3>
-                                        <p className="text-xs text-gray-400 font-mono mt-1">
-                                            🎬 YouTube ID: <span className="text-gray-600">{lesson.video_id}</span>
-                                        </p>
+                                        <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                                            <span className={`material-symbols-outlined text-[16px] ${getLessonTypeMeta(lesson.lessonType).color}`}>
+                                                {getLessonTypeMeta(lesson.lessonType).icon}
+                                            </span>
+                                            <span className="font-semibold">{getLessonTypeMeta(lesson.lessonType).label}</span>
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${normalizePublishStatus(lesson.publishStatus) === 'publish' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                {normalizePublishStatus(lesson.publishStatus) === 'publish' ? 'Published' : 'Draft'}
+                                            </span>
+                                            {lesson.isPreview && (
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">Preview</span>
+                                            )}
+                                            {lesson.lessonType === 'video' && lesson.video_id && (
+                                                <span className="font-mono text-gray-400">ID: {lesson.video_id}</span>
+                                            )}
+                                            {lesson.lessonType === 'quiz' && (
+                                                <span className="text-gray-400">{Number(lesson.quizQuestionCount || 0)} câu hỏi</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex gap-3 mt-4 md:mt-0 w-full md:w-auto">

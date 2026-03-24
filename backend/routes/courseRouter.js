@@ -60,13 +60,9 @@ router.route('/')
  *       200:
  *         description: Thông tin chi tiết khóa học
  */
-router.route('/')
-    .get(courseCtrl.getCourses)
-    .post(auth, authAdmin, courseCtrl.createCourse);
-
 router.route('/:id')
     .get(courseCtrl.getCourseDetail)
-    .put(auth, authAdmin, courseCtrl.updateCourse)    // 🆕 THÊM DÒNG NÀY ĐỂ SỬA
-    .delete(auth, authAdmin, courseCtrl.deleteCourse); // 🆕 THÊM DÒNG NÀY ĐỂ XÓA
+    .put(auth, authAdmin, courseCtrl.updateCourse)
+    .delete(auth, authAdmin, courseCtrl.deleteCourse);
 
 module.exports = router;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet, Navigate } from 'react-router-dom';
 
 // Import Components & Pages
 import Header from './components/Header';
@@ -55,7 +55,8 @@ function App() {
           <Route element={<AdminRoute />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/courses" element={<AdminCourses />} />
-              <Route path="/admin/create_course" element={<CreateCourse />} />
+              <Route path="/admin/create_course" element={<Navigate to="/admin/edit_course" replace />} />
+              <Route path="/admin/edit_course" element={<CreateCourse />} />
               <Route path="/admin/edit_course/:id" element={<CreateCourse />} />
 
               {/* 👥 QUẢN LÝ TÀI KHOẢN (Mới thêm vào menu chính của Admin) */}

@@ -50,6 +50,15 @@ const AdminCourses = () => {
         return 0;
     };
 
+    const normalizeCourseStatus = (statusValue) => {
+        const normalizedStatus = String(statusValue || '').trim().toLowerCase();
+
+        if (normalizedStatus === 'draft') return 'draft';
+        if (normalizedStatus === 'published') return 'publish';
+        if (normalizedStatus === 'publish') return 'publish';
+        return 'publish';
+    };
+
     const categories = useMemo(() => {
         const values = new Set();
         safeCourses.forEach((course) => {
@@ -66,13 +75,13 @@ const AdminCourses = () => {
             const title = course?.title?.toLowerCase() || '';
             const category = course?.category || 'General';
             const normalizedCategory = category.toLowerCase();
-            const status = (course?.status || 'published').toLowerCase();
+            const status = normalizeCourseStatus(course?.status);
 
             const matchesSearch = !normalizedSearch ||
                 title.includes(normalizedSearch) ||
                 normalizedCategory.includes(normalizedSearch);
             const matchesCategory = categoryFilter === 'All Categories' || category === categoryFilter;
-            const matchesStatus = statusFilter === 'All Status' || status === statusFilter.toLowerCase();
+            const matchesStatus = statusFilter === 'All Status' || status === statusFilter;
 
             return matchesSearch && matchesCategory && matchesStatus;
         });
@@ -81,7 +90,7 @@ const AdminCourses = () => {
     const totalCourses = safeCourses.length;
     const hasStatusData = safeCourses.some((course) => typeof course?.status === 'string' && course.status.trim() !== '');
     const activeCourses = hasStatusData
-        ? safeCourses.filter((course) => (course?.status || '').toLowerCase() !== 'draft').length
+        ? safeCourses.filter((course) => normalizeCourseStatus(course?.status) !== 'draft').length
         : totalCourses;
     const totalLessons = safeCourses.reduce((sum, course) => sum + getLessonCount(course), 0);
     const totalStudents = safeCourses.reduce((sum, course) => sum + getStudentCount(course), 0);
@@ -113,7 +122,7 @@ const AdminCourses = () => {
                             <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Course Management</h2>
                             <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Manage your curriculum and track course performance.</p>
                         </div>
-                        <Link to="/admin/create_course" className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-slate-950 font-bold rounded-lg hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20">
+                        <Link to="/admin/edit_course" className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20">
                             <span className="material-symbols-outlined text-xl">add</span>
                             Add New Course
                         </Link>
@@ -163,9 +172,9 @@ const AdminCourses = () => {
                             value={statusFilter}
                             onChange={(event) => setStatusFilter(event.target.value)}
                         >
-                            <option>All Status</option>
-                            <option>Published</option>
-                            <option>Draft</option>
+                            <option value="All Status">All Status</option>
+                            <option value="publish">Published</option>
+                            <option value="draft">Draft</option>
                         </select>
                         <Link to="/coming-soon" className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                             <span className="material-symbols-outlined text-lg">filter_list</span>
@@ -190,7 +199,7 @@ const AdminCourses = () => {
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                     {filteredCourses.length > 0 ? (
                                         filteredCourses.map((course) => {
-                                            const status = (course?.status || 'published').toLowerCase();
+                                            const status = normalizeCourseStatus(course?.status);
                                             const isDraft = status === 'draft';
                                             const studentCount = getStudentCount(course);
                                             const lessonCount = getLessonCount(course);

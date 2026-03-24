@@ -10,8 +10,9 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const app = express();
 
 // --- 1. CẤU HÌNH MIDDLEWARE (Đặt trên cùng) ---
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Tăng giới hạn để hỗ trợ file PDF dạng base64 (~10MB PDF → ~13MB base64)
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(helmet({ contentSecurityPolicy: false }));
 
 // Cấu hình CORS: Cho phép Frontend truy cập

@@ -86,7 +86,7 @@ const AdminUsers = () => {
                             <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Student Management</h2>
                             <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Manage user accounts and permissions.</p>
                         </div>
-                        <Link to="/coming-soon" className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-slate-950 font-bold rounded-lg hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20">
+                        <Link to="/coming-soon" className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20">
                             <span className="material-symbols-outlined text-xl">person_add</span>
                             Add New User
                         </Link>

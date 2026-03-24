@@ -27,6 +27,7 @@ const AdminPanelLayout = ({ children }) => {
     const isDashboardActive = pathname === '/admin/dashboard';
     const isCoursesActive = pathname.startsWith('/admin/courses') ||
         pathname.startsWith('/admin/create_course') ||
+        pathname === '/admin/edit_course' ||
         pathname.startsWith('/admin/edit_course') ||
         pathname.startsWith('/admin/lessons') ||
         pathname.startsWith('/admin/create_lesson') ||
@@ -49,6 +50,10 @@ const AdminPanelLayout = ({ children }) => {
                 </div>
 
                 <nav className="flex-1 px-4 py-4 space-y-1">
+                    <Link to="/" className={buildNavItemClassName(false)}>
+                        <span className="material-symbols-outlined">home</span>
+                        <span className="text-sm font-semibold">Home</span>
+                    </Link>
                     <Link to="/admin/dashboard" className={buildNavItemClassName(isDashboardActive)}>
                         <span className="material-symbols-outlined">dashboard</span>
                         <span className="text-sm font-semibold">Dashboard</span>
@@ -61,20 +66,6 @@ const AdminPanelLayout = ({ children }) => {
                         <span className="material-symbols-outlined">group</span>
                         <span className="text-sm font-semibold">Students</span>
                     </Link>
-                    <Link to="/coming-soon" className={buildNavItemClassName(false)}>
-                        <span className="material-symbols-outlined">payments</span>
-                        <span className="text-sm font-semibold">Revenue</span>
-                    </Link>
-                    <Link to="/coming-soon" className={buildNavItemClassName(false)}>
-                        <span className="material-symbols-outlined">bar_chart</span>
-                        <span className="text-sm font-semibold">Reports</span>
-                    </Link>
-                    <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
-                        <Link to="/coming-soon" className={buildNavItemClassName(false)}>
-                            <span className="material-symbols-outlined">settings</span>
-                            <span className="text-sm font-semibold">Settings</span>
-                        </Link>
-                    </div>
                 </nav>
 
                 <div className="p-4 border-t border-slate-100 dark:border-slate-800">

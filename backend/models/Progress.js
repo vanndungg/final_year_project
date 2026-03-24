@@ -14,6 +14,22 @@ const progressSchema = new mongoose.Schema({
     completedLessons: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Lesson'
+    }],
+    assignmentSubmissions: [{
+        lessonId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Lesson',
+            required: true
+        },
+        answer: {
+            type: String,
+            trim: true,
+            required: true
+        },
+        submittedAt: {
+            type: Date,
+            default: Date.now
+        }
     }]
 }, {
     timestamps: true
