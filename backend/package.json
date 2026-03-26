@@ -22,6 +22,7 @@
     "migrate-mongo": "^14.0.7",
     "mongoose": "^9.1.5",
     "nodemon": "^3.1.11",
+    "sepay-pg-node": "^1.0.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   }

@@ -33,6 +33,7 @@ const AdminPanelLayout = ({ children }) => {
         pathname.startsWith('/admin/create_lesson') ||
         pathname.startsWith('/admin/edit_lesson');
     const isUsersActive = pathname.startsWith('/admin/users');
+    const isPaymentsActive = pathname.startsWith('/admin/payments');
 
     const accountName = user?.name || 'Admin';
     const accountRole = getRoleLabel(user?.role);
@@ -65,6 +66,10 @@ const AdminPanelLayout = ({ children }) => {
                     <Link to="/admin/users" className={buildNavItemClassName(isUsersActive)}>
                         <span className="material-symbols-outlined">group</span>
                         <span className="text-sm font-semibold">Students</span>
+                    </Link>
+                    <Link to="/admin/payments" className={buildNavItemClassName(isPaymentsActive)}>
+                        <span className="material-symbols-outlined">receipt_long</span>
+                        <span className="text-sm font-semibold">Payments</span>
                     </Link>
                 </nav>
 

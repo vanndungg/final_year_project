@@ -1,8 +1,33 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const Home = () => {
     // Note: Header handles login state / navigation for all pages
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const gatewayResult = String(params.get('gatewayResult') || '').toLowerCase();
+
+        if (!gatewayResult) return;
+
+        if (gatewayResult === 'success') {
+            toast.success('Thanh toán thành công. Bạn đã sở hữu khóa học và có thể bắt đầu học ngay.');
+        } else if (gatewayResult === 'cancel') {
+            toast.warn('Bạn đã hủy thanh toán trên VNPAY.');
+        } else {
+            toast.error('Thanh toán chưa thành công. Vui lòng thử lại.');
+        }
+
+        const cleaned = new URLSearchParams(location.search);
+        cleaned.delete('gatewayResult');
+        cleaned.delete('paymentId');
+        const next = cleaned.toString();
+        navigate(next ? `/?${next}` : '/', { replace: true });
+    }, [location.search, navigate]);
 
     return (
         <div className="relative flex min-h-screen flex-col overflow-x-hidden">

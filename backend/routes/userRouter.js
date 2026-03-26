@@ -42,6 +42,9 @@ router.patch('/addcart', auth, userCtrl.addCart);
 
 // 3. Thanh toán
 router.post('/checkout', auth, userCtrl.checkout);
+router.post('/vnpay/create-order', auth, userCtrl.createVnpayOrder);
+router.get('/vnpay/payment/:paymentId', auth, userCtrl.getVnpayPaymentStatus);
+router.get('/vnpay/payment-url/:paymentId', auth, userCtrl.getVnpayPaymentUrl);
 
 // 4. Đăng ký khóa học nhanh
 router.patch('/enroll', auth, userCtrl.enrollCourse);
@@ -63,5 +66,6 @@ router.patch('/update_role/:id', auth, authAdmin, userCtrl.updateRole);
 router.get('/admin_stats', auth, authAdmin, userCtrl.getAdminStats);
 
 router.get('/course_performance', auth, authAdmin, userCtrl.getCoursePerformanceStats);
+router.get('/successful_payments', auth, authAdmin, userCtrl.getSuccessfulPayments);
 
 module.exports = router;

@@ -3,6 +3,7 @@ const Courses = require('../models/Course');
 const Payments = require('../models/Payment'); // Cần tạo model này
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 const buildCoursePerformanceMetrics = async () => {
     const [users, courses] = await Promise.all([
@@ -32,6 +33,87 @@ const buildCoursePerformanceMetrics = async () => {
     });
 
     return { studentsByCourse, revenueByCourse, totalRevenue };
+};
+
+const generatePaymentCode = () => {
+    const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+    return `EDU${Date.now().toString().slice(-8)}${randomPart}`;
+};
+
+const buildSortedQuery = (params) => {
+    const sortedKeys = Object.keys(params).sort();
+    return sortedKeys
+        .map((key) => `${key}=${encodeURIComponent(String(params[key])).replace(/%20/g, '+')}`)
+        .join('&');
+};
+
+const buildVnpayPaymentUrl = ({ payment, ipAddr, backendBaseUrl }) => {
+    const tmnCode = String(process.env.VNP_TMNCODE || '').trim();
+    const hashSecret = String(process.env.VNP_HASHSECRET || '').trim();
+    const vnpUrl = String(process.env.VNP_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html').trim();
+    const resolvedBackendBaseUrl = String(
+        backendBaseUrl || process.env.BACKEND_URL || 'http://localhost:5000'
+    ).replace(/\/$/, '');
+
+    if (!tmnCode || !hashSecret) {
+        throw new Error('Thieu VNP_TMNCODE hoac VNP_HASHSECRET trong .env');
+    }
+
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const createDate = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+    const expire = new Date(now.getTime() + 15 * 60 * 1000);
+    const expireDate = `${expire.getFullYear()}${pad(expire.getMonth() + 1)}${pad(expire.getDate())}${pad(expire.getHours())}${pad(expire.getMinutes())}${pad(expire.getSeconds())}`;
+
+    const returnUrl = `${resolvedBackendBaseUrl}/api/vnpay/return?paymentId=${payment._id}`;
+    const amount = Math.round(Number(payment.total || 0) * 100);
+
+    const vnpParams = {
+        vnp_Version: '2.1.0',
+        vnp_Command: 'pay',
+        vnp_TmnCode: tmnCode,
+        vnp_Amount: amount,
+        vnp_CurrCode: 'VND',
+        vnp_TxnRef: payment.paymentID,
+        vnp_OrderInfo: `Thanh toan don hang ${payment.paymentID}`,
+        vnp_OrderType: 'other',
+        vnp_Locale: 'vn',
+        vnp_ReturnUrl: returnUrl,
+        vnp_IpAddr: ipAddr || '127.0.0.1',
+        vnp_CreateDate: createDate,
+        vnp_ExpireDate: expireDate
+    };
+
+    const signData = buildSortedQuery(vnpParams);
+    const secureHash = crypto.createHmac('sha512', hashSecret).update(Buffer.from(signData, 'utf-8')).digest('hex');
+
+    return `${vnpUrl}?${signData}&vnp_SecureHash=${secureHash}`;
+};
+
+const fulfillPaymentOrder = async (paymentDoc) => {
+    if (!paymentDoc || paymentDoc.isFulfilled) return;
+
+    const cartItems = Array.isArray(paymentDoc.cart) ? paymentDoc.cart : [];
+    const courseIds = cartItems.map((item) => String(item?._id || '')).filter(Boolean);
+
+    if (courseIds.length === 0) {
+        paymentDoc.isFulfilled = true;
+        await paymentDoc.save();
+        return;
+    }
+
+    await Users.findOneAndUpdate({ _id: paymentDoc.user_id }, {
+        $addToSet: { enrolledCourses: { $each: courseIds } },
+        $pull: { cart: { _id: { $in: courseIds } } }
+    });
+
+    for (const courseId of courseIds) {
+        await Courses.findOneAndUpdate({ _id: courseId }, { $inc: { studentCount: 1 } });
+    }
+
+    paymentDoc.isFulfilled = true;
+    await paymentDoc.save();
 };
 
 const userCtrl = {
@@ -154,11 +236,15 @@ const userCtrl = {
                 name: user.name,
                 email: user.email,
                 paymentID: `PAY-${Date.now()}`, 
+                paymentCode: `LEGACY-${Date.now()}`,
                 cart: user.cart,
                 subtotal: total,
                 discount,
                 couponCode,
-                total: finalTotal
+                total: finalTotal,
+                status: 'paid',
+                paidAt: new Date(),
+                isFulfilled: true
             });
 
             await newPayment.save();
@@ -187,6 +273,145 @@ const userCtrl = {
             return res.status(500).json({ msg: err.message });
         }
     },
+
+    createVnpayOrder: async (req, res) => {
+        try {
+            const user = await Users.findById(req.user.id).select('name email cart enrolledCourses');
+            if (!user) return res.status(400).json({ msg: 'Người dùng không tồn tại.' });
+
+            const cartItems = Array.isArray(user.cart) ? user.cart : [];
+            if (cartItems.length === 0) return res.status(400).json({ msg: 'Giỏ hàng rỗng.' });
+
+            const enrolledIds = new Set((user.enrolledCourses || []).map((id) => String(id)));
+            const payableItems = cartItems.filter((item) => !enrolledIds.has(String(item?._id || '')));
+            if (payableItems.length === 0) {
+                return res.status(400).json({ msg: 'Không có khóa học hợp lệ để thanh toán.' });
+            }
+
+            const subtotal = payableItems.reduce((sum, item) => sum + Number(item?.price || 0), 0);
+            const couponCode = String(req.body?.couponCode || '').trim().toUpperCase();
+            const discount = couponCode === 'EDU50' ? Math.min(50000, subtotal) : 0;
+            const total = Math.max(0, subtotal - discount);
+
+            const pendingOrder = await Payments.findOne({
+                user_id: String(user._id),
+                status: 'pending',
+                isFulfilled: false,
+                total
+            }).sort({ createdAt: -1 });
+
+            const order = pendingOrder || await Payments.create({
+                user_id: user._id,
+                name: user.name,
+                email: user.email,
+                paymentID: `SP-${Date.now()}`,
+                paymentCode: generatePaymentCode(),
+                cart: payableItems,
+                subtotal,
+                discount,
+                couponCode,
+                total,
+                status: 'pending',
+                isFulfilled: false
+            });
+
+            return res.json({
+                msg: 'Đã tạo yêu cầu thanh toán VNPAY.',
+                payment: {
+                    _id: order._id,
+                    paymentCode: order.paymentCode,
+                    status: order.status,
+                    subtotal: order.subtotal,
+                    discount: order.discount,
+                    total: order.total,
+                    couponCode: order.couponCode,
+                    createdAt: order.createdAt
+                }
+            });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    getVnpayPaymentUrl: async (req, res) => {
+        try {
+            const payment = await Payments.findOne({
+                _id: req.params.paymentId,
+                user_id: String(req.user.id)
+            });
+
+            if (!payment) return res.status(404).json({ msg: 'Không tìm thấy giao dịch.' });
+            if (String(payment.status).toLowerCase() === 'paid') {
+                return res.status(400).json({ msg: 'Giao dịch đã thanh toán.' });
+            }
+
+            const ipAddr = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+                || req.connection?.remoteAddress
+                || req.socket?.remoteAddress
+                || '127.0.0.1';
+
+            const backendBaseUrl = String(process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+
+            const paymentUrl = buildVnpayPaymentUrl({
+                payment,
+                ipAddr: String(ipAddr).replace('::ffff:', ''),
+                backendBaseUrl
+            });
+
+            return res.json({
+                paymentId: payment._id,
+                paymentInvoiceNumber: payment.paymentID,
+                paymentUrl
+            });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    getVnpayPaymentStatus: async (req, res) => {
+        try {
+            const payment = await Payments.findOne({
+                _id: req.params.paymentId,
+                user_id: String(req.user.id)
+            }).lean();
+
+            if (!payment) return res.status(404).json({ msg: 'Không tìm thấy giao dịch.' });
+
+            const cartItems = Array.isArray(payment.cart) ? payment.cart : [];
+            const courseItems = cartItems.map((item) => ({
+                _id: item?._id,
+                title: item?.title || 'Khóa học',
+                image: item?.image || '',
+                price: Number(item?.price || 0),
+                studentCount: Number(item?.studentCount || 0),
+                rating: Number(item?.ratingsAverage || 5)
+            }));
+
+            return res.json({
+                _id: payment._id,
+                paymentCode: payment.paymentCode,
+                status: payment.status,
+                subtotal: Number(payment.subtotal || 0),
+                discount: Number(payment.discount || 0),
+                total: Number(payment.total || 0),
+                couponCode: payment.couponCode || '',
+                paidAt: payment.paidAt,
+                createdAt: payment.createdAt,
+                gateway: payment.gateway || '',
+                transferAmount: Number(payment.transferAmount || 0),
+                accountNumber: payment.accountNumber || '',
+                referenceCode: payment.referenceCode || '',
+                courseItems
+            });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    // Backward-compat aliases during payment gateway migration
+    createSepayOrder: async (req, res) => userCtrl.createVnpayOrder(req, res),
+    getSepayCheckoutForm: async (req, res) => userCtrl.getVnpayPaymentUrl(req, res),
+    getSepayPaymentStatus: async (req, res) => userCtrl.getVnpayPaymentStatus(req, res),
 
     // 7. Đăng ký khóa học nhanh (Free hoặc Quick Enroll)
     enrollCourse: async (req, res) => {
@@ -270,6 +495,41 @@ const userCtrl = {
             const { studentsByCourse, revenueByCourse } = await buildCoursePerformanceMetrics();
 
             return res.json({ studentsByCourse, revenueByCourse });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    // 13. Admin: Danh sach giao dich thanh cong
+    getSuccessfulPayments: async (req, res) => {
+        try {
+            const payments = await Payments.find({ status: 'paid' })
+                .sort({ paidAt: -1, updatedAt: -1 })
+                .lean();
+
+            const formatted = payments.map((payment) => {
+                const cartItems = Array.isArray(payment.cart) ? payment.cart : [];
+                const courseItems = cartItems.map((item) => ({
+                    _id: item?._id,
+                    title: item?.title || 'Khóa học'
+                }));
+
+                return {
+                    _id: payment._id,
+                    paymentID: payment.paymentID,
+                    paymentCode: payment.paymentCode,
+                    name: payment.name,
+                    email: payment.email,
+                    total: Number(payment.total || 0),
+                    paidAt: payment.paidAt,
+                    gateway: payment.gateway || 'N/A',
+                    referenceCode: payment.referenceCode || '',
+                    transferAmount: Number(payment.transferAmount || 0),
+                    courseItems
+                };
+            });
+
+            return res.json(formatted);
         } catch (err) {
             return res.status(500).json({ msg: err.message });
         }

@@ -66,6 +66,7 @@ app.use('/api/courses', require('./routes/courseRouter'));
 app.use('/api/lessons', require('./routes/lessonRouter')); 
 app.use('/api/reviews', require('./routes/reviewRouter'));
 app.use('/api/progress', require('./routes/progressRouter'));
+app.use('/api/vnpay', require('./routes/vnpayRouter'));
 
 // --- 4. TRANG CHỦ BACKEND ---
 app.get('/', (req, res) => {
