@@ -23,6 +23,7 @@ const auth = require('../middleware/auth');
  *                 type: string
  */
 router.post('/mark-complete', auth, progressCtrl.markComplete);
+router.post('/unmark-complete', auth, progressCtrl.unmarkComplete);
 router.post('/assignment/submit', auth, progressCtrl.submitAssignmentAnswer);
 
 /**

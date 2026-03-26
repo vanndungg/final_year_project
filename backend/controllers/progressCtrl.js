@@ -2,12 +2,57 @@ const Progress = require('../models/Progress');
 const Users = require('../models/User');
 const Lessons = require('../models/Lesson');
 
+const buildProgressPayload = async (progressDoc, courseId) => {
+    const totalLessons = await Lessons.countDocuments({ courseId });
+    const completedLessons = Array.isArray(progressDoc?.completedLessons)
+        ? progressDoc.completedLessons.map((item) => String(item))
+        : [];
+    const assignmentSubmissions = Array.isArray(progressDoc?.assignmentSubmissions)
+        ? progressDoc.assignmentSubmissions.map((item) => ({
+            lessonId: String(item.lessonId),
+            answer: item.answer,
+            submittedAt: item.submittedAt
+        }))
+        : [];
+
+    const completedCount = completedLessons.length;
+    const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+
+    return {
+        completedLessons,
+        assignmentSubmissions,
+        completedCount,
+        totalLessons,
+        progressPercent
+    };
+};
+
 const progressCtrl = {
     // Đánh dấu 1 bài học là đã hoàn thành
     markComplete: async (req, res) => {
         try {
             const { courseId, lessonId } = req.body;
             const userId = req.user.id;
+
+            if (!courseId || !lessonId) {
+                return res.status(400).json({ msg: 'Thiếu courseId hoặc lessonId.' });
+            }
+
+            const [user, lesson] = await Promise.all([
+                Users.findById(userId).select('role enrolledCourses'),
+                Lessons.findById(lessonId).select('courseId title lessonType')
+            ]);
+
+            if (!lesson || String(lesson.courseId) !== String(courseId)) {
+                return res.status(404).json({ msg: 'Lesson không tồn tại trong khóa học này.' });
+            }
+
+            const isAdmin = Number(user?.role) === 1;
+            const isEnrolled = isAdmin || user?.enrolledCourses?.some((item) => String(item) === String(courseId));
+
+            if (!isEnrolled) {
+                return res.status(403).json({ msg: 'Bạn cần sở hữu khóa học trước khi cập nhật tiến độ.' });
+            }
 
             // Tìm bản ghi tiến độ, nếu chưa có thì tạo mới (upsert)
             let progress = await Progress.findOne({ userId, courseId });
@@ -16,13 +61,63 @@ const progressCtrl = {
                 progress = new Progress({ userId, courseId, completedLessons: [lessonId] });
             } else {
                 // Nếu bài học chưa có trong danh sách hoàn thành thì mới thêm vào
-                if (!progress.completedLessons.includes(lessonId)) {
+                if (!progress.completedLessons.some((item) => String(item) === String(lessonId))) {
                     progress.completedLessons.push(lessonId);
                 }
             }
 
             await progress.save();
-            res.json({ msg: "Đã đánh dấu hoàn thành bài học!", progress });
+            res.json({
+                msg: 'Đã đánh dấu hoàn thành bài học!',
+                lessonTitle: lesson.title,
+                progress: await buildProgressPayload(progress, courseId)
+            });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    unmarkComplete: async (req, res) => {
+        try {
+            const { courseId, lessonId } = req.body;
+            const userId = req.user.id;
+
+            if (!courseId || !lessonId) {
+                return res.status(400).json({ msg: 'Thiếu courseId hoặc lessonId.' });
+            }
+
+            const [user, lesson, progress] = await Promise.all([
+                Users.findById(userId).select('role enrolledCourses'),
+                Lessons.findById(lessonId).select('courseId title lessonType'),
+                Progress.findOne({ userId, courseId })
+            ]);
+
+            if (!lesson || String(lesson.courseId) !== String(courseId)) {
+                return res.status(404).json({ msg: 'Lesson không tồn tại trong khóa học này.' });
+            }
+
+            const isAdmin = Number(user?.role) === 1;
+            const isEnrolled = isAdmin || user?.enrolledCourses?.some((item) => String(item) === String(courseId));
+
+            if (!isEnrolled) {
+                return res.status(403).json({ msg: 'Bạn cần sở hữu khóa học trước khi cập nhật tiến độ.' });
+            }
+
+            if (!progress) {
+                return res.status(404).json({ msg: 'Chưa có tiến độ để hoàn tác.' });
+            }
+
+            progress.completedLessons = (progress.completedLessons || []).filter(
+                (item) => String(item) !== String(lessonId)
+            );
+
+            await progress.save();
+
+            return res.json({
+                msg: 'Đã hoàn tác trạng thái hoàn thành bài học.',
+                lessonTitle: lesson.title,
+                progress: await buildProgressPayload(progress, courseId)
+            });
         } catch (err) {
             return res.status(500).json({ msg: err.message });
         }
@@ -33,8 +128,12 @@ const progressCtrl = {
         try {
             const { courseId } = req.params;
             const progress = await Progress.findOne({ userId: req.user.id, courseId });
-            
-            res.json(progress ? progress : { completedLessons: [] });
+
+            if (!progress) {
+                return res.json(await buildProgressPayload(null, courseId));
+            }
+
+            res.json(await buildProgressPayload(progress, courseId));
         } catch (err) {
             return res.status(500).json({ msg: err.message });
         }
@@ -105,7 +204,8 @@ const progressCtrl = {
             res.json({
                 msg: 'Đã nộp câu trả lời assignment thành công.',
                 submission: submissionPayload,
-                lessonTitle: lesson.title
+                lessonTitle: lesson.title,
+                progress: await buildProgressPayload(progress, courseId)
             });
         } catch (err) {
             return res.status(500).json({ msg: err.message });

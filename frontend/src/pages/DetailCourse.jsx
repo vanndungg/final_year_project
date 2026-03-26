@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { GlobalState } from '../GlobalState';
@@ -16,6 +16,8 @@ const getLessonTypeMeta = (lessonType) => {
 
     return { icon: 'play_circle', iconClass: 'text-blue-600', label: 'Video' };
 };
+
+const normalizeLessonType = (lessonType) => String(lessonType || 'video').trim().toLowerCase();
 
 const getRatingLabel = (value) => {
     switch (value) {
@@ -125,6 +127,13 @@ const DetailCourse = () => {
     const [assignmentAnswer, setAssignmentAnswer] = useState('');
     const [submittingAssignment, setSubmittingAssignment] = useState(false);
     const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
+    const [progress, setProgress] = useState({
+        completedLessons: [],
+        assignmentSubmissions: [],
+        completedCount: 0,
+        totalLessons: 0,
+        progressPercent: 0
+    });
     const prevPdfBlobUrl = useRef(null);
 
     // Tạo Blob URL khi mở document lesson, giải phóng khi đóng
@@ -175,6 +184,22 @@ const DetailCourse = () => {
     const [showAllReviews, setShowAllReviews] = useState(false);
     const [callback, setCallback] = useState(false);
 
+    const syncProgress = useCallback((payload) => {
+        setProgress({
+            completedLessons: Array.isArray(payload?.completedLessons) ? payload.completedLessons.map((item) => String(item)) : [],
+            assignmentSubmissions: Array.isArray(payload?.assignmentSubmissions)
+                ? payload.assignmentSubmissions.map((item) => ({
+                    lessonId: String(item.lessonId),
+                    answer: item.answer || '',
+                    submittedAt: item.submittedAt || null
+                }))
+                : [],
+            completedCount: Number(payload?.completedCount || 0),
+            totalLessons: Number(payload?.totalLessons || 0),
+            progressPercent: Number(payload?.progressPercent || 0)
+        });
+    }, []);
+
     useEffect(() => {
         if (!params.id) return;
 
@@ -199,15 +224,35 @@ const DetailCourse = () => {
         fetchData();
     }, [params.id, token, callback]);
 
+    const isEnrolled = user?.enrolledCourses?.some((item) => String(item?._id || item) === String(course?._id));
+    const isInCart = user?.cart?.some((item) => String(item?._id || item) === String(course?._id));
+    const isPaidCourse = Number(course?.price || 0) > 0;
+    const isAdmin = Number(user?.role) === 1;
+    const canStudy = Boolean(course?._id) && (isEnrolled || isAdmin);
+
+    useEffect(() => {
+        if (!token || !params.id || !canStudy) {
+            syncProgress({ completedLessons: [], assignmentSubmissions: [], completedCount: 0, totalLessons: 0, progressPercent: 0 });
+            return;
+        }
+
+        const fetchProgress = async () => {
+            try {
+                const response = await axiosClient.get(`/progress/${params.id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                syncProgress(response.data);
+            } catch (error) {
+                console.error('Khong the tai tien do khoa hoc:', error);
+            }
+        };
+
+        fetchProgress();
+    }, [canStudy, params.id, syncProgress, token]);
+
     if (!course) {
         return <div className="py-20 text-center italic">Dang tai du lieu...</div>;
     }
-
-    const isEnrolled = user?.enrolledCourses?.some((item) => String(item?._id || item) === String(course._id));
-    const isInCart = user?.cart?.some((item) => String(item?._id || item) === String(course._id));
-    const isPaidCourse = Number(course?.price || 0) > 0;
-    const isAdmin = Number(user?.role) === 1;
-    const canStudy = isEnrolled || isAdmin;
     const activeRating = hoverRating || rating;
     const reviewCount = reviews.length;
     const averageRating = reviewCount > 0
@@ -215,6 +260,12 @@ const DetailCourse = () => {
         : Number(course.avgRating || 0);
     const studentCount = getStudentCount(course);
     const visibleReviews = showAllReviews ? reviews : reviews.slice(0, 4);
+    const completedLessonIds = new Set((progress.completedLessons || []).map((item) => String(item)));
+    const assignmentSubmissionMap = new Map(
+        (progress.assignmentSubmissions || []).map((item) => [String(item.lessonId), item])
+    );
+    const completedLessonCount = lessons.filter((lesson) => completedLessonIds.has(String(lesson?._id || ''))).length;
+    const progressPercent = lessons.length > 0 ? Math.round((completedLessonCount / lessons.length) * 100) : 0;
 
     const canInteractWithReviewForm = isLogged && isEnrolled;
 
@@ -347,22 +398,116 @@ const DetailCourse = () => {
         setActiveLesson(lesson);
         setQuizAnswers({});
         setQuizResult(null);
-        setAssignmentAnswer('');
+        setAssignmentAnswer(assignmentSubmissionMap.get(String(lesson?._id || ''))?.answer || '');
     };
 
-    const markLessonComplete = async (lesson) => {
+    const markLessonComplete = async (lesson, { silent = false } = {}) => {
         if (!token || !canStudy) return;
 
+        if (completedLessonIds.has(String(lesson?._id || ''))) {
+            if (!silent) {
+                toast.info('Bai hoc nay da duoc danh dau hoan thanh.');
+            }
+            return;
+        }
+
         try {
-            await axiosClient.post('/progress/mark-complete', {
+            const response = await axiosClient.post('/progress/mark-complete', {
                 courseId: course._id,
                 lessonId: lesson._id
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-        } catch {
-            // Ignore mark-complete errors to avoid interrupting learning flow.
+
+            syncProgress(response.data?.progress);
+            if (!silent) {
+                toast.success(response.data?.msg || 'Da cap nhat tien do bai hoc.');
+            }
+        } catch (error) {
+            if (!silent) {
+                toast.error(error.response?.data?.msg || 'Khong the cap nhat tien do bai hoc.');
+            }
         }
+    };
+
+    const unmarkLessonComplete = async (lesson, { silent = false } = {}) => {
+        if (!token || !canStudy) return;
+
+        if (!isLessonCompleted(lesson?._id)) {
+            if (!silent) {
+                toast.info('Bai hoc nay chua duoc danh dau hoan thanh.');
+            }
+            return;
+        }
+
+        try {
+            const response = await axiosClient.post('/progress/unmark-complete', {
+                courseId: course._id,
+                lessonId: lesson._id
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            syncProgress(response.data?.progress);
+            if (!silent) {
+                toast.success(response.data?.msg || 'Da hoan tac tien do bai hoc.');
+            }
+        } catch (error) {
+            if (!silent) {
+                toast.error(error.response?.data?.msg || 'Khong the hoan tac tien do bai hoc.');
+            }
+        }
+    };
+
+    const toggleLessonCompletion = async (lesson) => {
+        if (!lesson) return;
+
+        if (isLessonCompleted(lesson._id)) {
+            const confirmed = window.confirm('Ban co muon huy hoan thanh bai hoc nay khong?');
+            if (!confirmed) return;
+            await unmarkLessonComplete(lesson);
+            return;
+        }
+
+        const confirmed = window.confirm('Ban co chac chan muon danh dau hoan thanh bai hoc nay khong?');
+        if (!confirmed) return;
+
+        await markLessonComplete(lesson);
+    };
+
+    const handleLessonPrimaryAction = async () => {
+        if (!activeLesson) return;
+
+        const lessonType = normalizeLessonType(activeLesson.lessonType);
+
+        if (isLessonCompleted(activeLesson._id)) {
+            await toggleLessonCompletion(activeLesson);
+            return;
+        }
+
+        if (lessonType === 'quiz') {
+            await submitQuiz();
+            return;
+        }
+
+        if (lessonType === 'assignment') {
+            await submitAssignment();
+            return;
+        }
+
+        await toggleLessonCompletion(activeLesson);
+    };
+
+    const getLessonPrimaryActionLabel = () => {
+        if (!activeLesson) return 'Cap nhat';
+        const lessonType = normalizeLessonType(activeLesson.lessonType);
+
+        if (lessonType === 'quiz' || lessonType === 'assignment') {
+            return isLessonCompleted(activeLesson._id) ? 'Da nop bai' : 'Nop bai';
+        }
+
+        if (isLessonCompleted(activeLesson._id)) return 'Da hoan thanh';
+        return 'Hoan thanh';
     };
 
     const submitQuiz = async () => {
@@ -395,8 +540,8 @@ const DetailCourse = () => {
         });
 
         if (passed) {
-            await markLessonComplete(activeLesson);
-            toast.success('Ban da hoan thanh quiz.');
+            await markLessonComplete(activeLesson, { silent: true });
+            toast.success('Ban da hoan thanh quiz va he thong da cap nhat tien do.');
         } else {
             toast.info('Chua dat diem qua. Thu lai nhe.');
         }
@@ -417,7 +562,7 @@ const DetailCourse = () => {
 
         setSubmittingAssignment(true);
         try {
-            await axiosClient.post('/progress/assignment/submit', {
+            const response = await axiosClient.post('/progress/assignment/submit', {
                 courseId: course._id,
                 lessonId: activeLesson._id,
                 answer: assignmentAnswer.trim()
@@ -425,7 +570,8 @@ const DetailCourse = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            toast.success('Da nop bai assignment thanh cong.');
+            syncProgress(response.data?.progress);
+            toast.success('Da nop bai assignment thanh cong va cap nhat tien do.');
             setAssignmentAnswer('');
         } catch (error) {
             toast.error(error.response?.data?.msg || 'Khong the nop bai assignment.');
@@ -435,19 +581,16 @@ const DetailCourse = () => {
     };
 
     const lessonActionLabel = (lesson) => {
-        if (lesson.lessonType === 'video') return 'Hoc ngay';
-        if (lesson.lessonType === 'document') return 'Doc bai';
-        if (lesson.lessonType === 'quiz') return 'Lam quiz';
-        if (lesson.lessonType === 'assignment') return 'Lam bai tap';
         return 'Hoc ngay';
     };
 
     const lessonActionClass = (lesson) => {
-        if (lesson.lessonType === 'document') return 'bg-orange-500 hover:bg-orange-600';
-        if (lesson.lessonType === 'quiz') return 'bg-green-600 hover:bg-green-700';
-        if (lesson.lessonType === 'assignment') return 'bg-violet-600 hover:bg-violet-700';
         return 'bg-blue-600 hover:bg-blue-700';
     };
+
+    const isLessonCompleted = (lessonId) => completedLessonIds.has(String(lessonId || ''));
+
+    const getAssignmentSubmission = (lessonId) => assignmentSubmissionMap.get(String(lessonId || ''));
 
     const lessonModal = activeLesson ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -456,6 +599,35 @@ const DetailCourse = () => {
                     <div>
                         <h3 className="text-xl font-black">{activeLesson.title}</h3>
                         <p className="text-sm text-slate-500">{activeLesson.description}</p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-bold">
+                            {(() => {
+                                const activeType = normalizeLessonType(activeLesson.lessonType);
+                                const isSubmissionLesson = activeType === 'quiz' || activeType === 'assignment';
+
+                                if (isSubmissionLesson && isLessonCompleted(activeLesson._id)) {
+                                    return (
+                                        <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                            Da nop bai
+                                        </span>
+                                    );
+                                }
+
+                                if (!isSubmissionLesson && isLessonCompleted(activeLesson._id)) {
+                                    return (
+                                        <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                            Da hoan thanh
+                                        </span>
+                                    );
+                                }
+
+                                return null;
+                            })()}
+                            {normalizeLessonType(activeLesson.lessonType) === 'assignment' && getAssignmentSubmission(activeLesson._id) && (
+                                <span className="rounded-full bg-violet-100 px-3 py-1 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                                    Da nop bai
+                                </span>
+                            )}
+                        </div>
                     </div>
                     <button
                         type="button"
@@ -466,7 +638,7 @@ const DetailCourse = () => {
                     </button>
                 </div>
 
-                {activeLesson.lessonType === 'video' && (
+                {normalizeLessonType(activeLesson.lessonType) === 'video' && (
                     <div className="space-y-4">
                         {activeLesson.videoUploadData ? (
                             <video controls className="w-full rounded-xl bg-black" src={activeLesson.videoUploadData} />
@@ -486,17 +658,10 @@ const DetailCourse = () => {
                             <p className="text-sm text-slate-500">Video hien chua san sang.</p>
                         )}
 
-                        <button
-                            type="button"
-                            onClick={() => markLessonComplete(activeLesson)}
-                            className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white"
-                        >
-                            Danh dau hoan thanh
-                        </button>
                     </div>
                 )}
 
-                    {activeLesson.lessonType === 'document' && (
+                    {normalizeLessonType(activeLesson.lessonType) === 'document' && (
                         <div className="space-y-4">
                             {pdfBlobUrl ? (
                                 <div className="space-y-3">
@@ -524,17 +689,10 @@ const DetailCourse = () => {
                                     />
                                 </div>
                             )}
-                            <button
-                                type="button"
-                                onClick={() => markLessonComplete(activeLesson)}
-                                className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white"
-                            >
-                                Danh dau da doc xong
-                            </button>
                         </div>
                     )}
 
-                    {activeLesson.lessonType === 'quiz' && (
+                    {normalizeLessonType(activeLesson.lessonType) === 'quiz' && (
                         <div className="space-y-5">
                             {(activeLesson.quizQuestions || []).map((question, qIndex) => (
                                 <div key={`quiz-question-${qIndex + 1}`} className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
@@ -555,14 +713,6 @@ const DetailCourse = () => {
                                 </div>
                             ))}
 
-                            <button
-                                type="button"
-                                onClick={submitQuiz}
-                                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700"
-                            >
-                                Nop quiz
-                            </button>
-
                             {quizResult && (
                                 <div className={`rounded-lg border p-3 text-sm ${quizResult.passed ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-700'}`}>
                                     <p className="font-bold">Ket qua quiz</p>
@@ -573,7 +723,7 @@ const DetailCourse = () => {
                         </div>
                     )}
 
-                    {activeLesson.lessonType === 'assignment' && (
+                    {normalizeLessonType(activeLesson.lessonType) === 'assignment' && (
                         <div className="space-y-4">
                             <div className="rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-800 dark:border-violet-700 dark:bg-violet-900/30 dark:text-violet-200">
                                 <p className="font-bold">De bai</p>
@@ -586,16 +736,19 @@ const DetailCourse = () => {
                                 placeholder="Nhap cau tra loi cua ban tai day..."
                                 className="w-full rounded-xl border-slate-200 bg-slate-50 p-3 text-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800"
                             />
-                            <button
-                                type="button"
-                                disabled={submittingAssignment}
-                                onClick={submitAssignment}
-                                className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-60"
-                            >
-                                {submittingAssignment ? 'Dang nop...' : 'Nop cau tra loi'}
-                            </button>
                         </div>
                     )}
+
+                <div className="mt-6 border-t border-slate-200 pt-4 dark:border-slate-700">
+                    <button
+                        type="button"
+                        onClick={handleLessonPrimaryAction}
+                        disabled={submittingAssignment}
+                        className={`w-full rounded-lg px-4 py-3 text-sm font-bold text-white transition ${isLessonCompleted(activeLesson._id) ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'} disabled:opacity-60`}
+                    >
+                        {submittingAssignment ? 'Dang xu ly...' : getLessonPrimaryActionLabel()}
+                    </button>
+                </div>
             </div>
         </div>
     ) : null;
@@ -638,6 +791,22 @@ const DetailCourse = () => {
                             <i className="fas fa-play-circle mr-3 text-blue-600" />
                             Noi dung bai hoc ({lessons.length})
                         </h2>
+                        {canStudy && lessons.length > 0 && (
+                            <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+                                <div className="mb-2 flex items-center justify-between gap-4">
+                                    <div>
+                                        <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">Tien do hoc tap</p>
+                                        <p className="text-xs text-emerald-700/80 dark:text-emerald-200/80">Hoan thanh {completedLessonCount}/{lessons.length} bai hoc</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-2xl font-black text-emerald-700 dark:text-emerald-300">{progressPercent}%</p>
+                                    </div>
+                                </div>
+                                <div className="h-2 overflow-hidden rounded-full bg-emerald-100 dark:bg-slate-800">
+                                    <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${progressPercent}%` }} />
+                                </div>
+                            </div>
+                        )}
                         <div className="space-y-3">
                             {lessons.map((lesson, index) => (
                                 <div key={lesson._id} className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all hover:border-blue-300">
@@ -651,11 +820,25 @@ const DetailCourse = () => {
                                                 </span>
                                                 <span>{getLessonTypeMeta(lesson.lessonType).label}</span>
                                                 {lesson.durationMinutes > 0 && <span>• {lesson.durationMinutes} phut</span>}
+                                                {(() => {
+                                                    const lessonType = normalizeLessonType(lesson.lessonType);
+                                                    const isSubmissionLesson = lessonType === 'quiz' || lessonType === 'assignment';
+
+                                                    if (isLessonCompleted(lesson._id)) {
+                                                        return (
+                                                            <span className="rounded-full bg-blue-100 px-2 py-0.5 font-bold text-blue-700">
+                                                                {isSubmissionLesson ? 'Da nop bai' : 'Da hoan thanh'}
+                                                            </span>
+                                                        );
+                                                    }
+
+                                                    return null;
+                                                })()}
                                             </div>
                                             <p className="text-xs text-gray-500">{lesson.description}</p>
                                         </div>
                                     </div>
-                                    <div>
+                                    <div className="flex items-center gap-2">
                                         {lesson.isLocked || !canStudy ? (
                                             <span className="flex items-center gap-1 text-xs italic text-gray-400"><i className="fas fa-lock" /> Da khoa</span>
                                         ) : (
