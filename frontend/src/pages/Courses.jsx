@@ -4,8 +4,10 @@ import { GlobalState } from '../GlobalState.jsx';
 
 const Courses = () => {
     const { coursesAPI } = useContext(GlobalState);
+    const { userAPI } = useContext(GlobalState);
     const [searchParams, setSearchParams] = useSearchParams();
     const [courses] = coursesAPI.courses;
+    const [user = null] = userAPI?.user || [null];
     const [currentPage, setCurrentPage] = useState(1);
     const coursesPerPage = 12;
     const searchTerm = searchParams.get('q') || '';
@@ -40,6 +42,10 @@ const Courses = () => {
     ];
 
     // Filter and sort courses
+    const enrolledCourseIds = new Set(
+        (user?.enrolledCourses || []).map((item) => String(item?._id || item))
+    );
+
     const filteredCourses = courses.filter((course) => {
         const normalizedSearch = searchTerm.trim().toLowerCase();
         const courseTitle = course.title?.toLowerCase() || '';
@@ -50,6 +56,12 @@ const Courses = () => {
 
         return searchMatch;
     }).sort((a, b) => {
+        const aOwned = enrolledCourseIds.has(String(a?._id || '')) ? 1 : 0;
+        const bOwned = enrolledCourseIds.has(String(b?._id || '')) ? 1 : 0;
+
+        // Push enrolled courses to top, then apply selected sort inside each group.
+        if (aOwned !== bOwned) return bOwned - aOwned;
+
         switch (sortBy) {
             case 'price-low':
                 return (a.price || 0) - (b.price || 0);
@@ -62,12 +74,16 @@ const Courses = () => {
         }
     });
 
+    const myCourseCount = filteredCourses.filter((course) => enrolledCourseIds.has(String(course?._id || ''))).length;
+
     // Tính toán khóa học hiển thị trên trang hiện tại
     const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
     const safeCurrentPage = Math.min(currentPage, Math.max(totalPages, 1));
     const indexOfLastCourse = safeCurrentPage * coursesPerPage;
     const indexOfFirstCourse = indexOfLastCourse - coursesPerPage;
     const currentCourses = filteredCourses.slice(indexOfFirstCourse, indexOfLastCourse);
+    const currentOwnedCourses = currentCourses.filter((course) => enrolledCourseIds.has(String(course?._id || '')));
+    const currentDiscoverCourses = currentCourses.filter((course) => !enrolledCourseIds.has(String(course?._id || '')));
 
     // Hàm chuyển trang
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
@@ -107,7 +123,9 @@ const Courses = () => {
                         </ol>
                     </nav>
                     <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Khóa học của chúng tôi</h2>
-                    <p className="text-slate-600 dark:text-slate-400 mt-2">{filteredCourses.length} khóa học có sẵn</p>
+                    <p className="text-slate-600 dark:text-slate-400 mt-2">
+                        {filteredCourses.length} khóa học có sẵn • {myCourseCount} khóa học của tôi
+                    </p>
                 </div>
             </section>
             <main className="container mx-auto px-4 py-8">
@@ -167,40 +185,104 @@ const Courses = () => {
                             <p className="text-gray-500 italic">Không tìm thấy khóa học phù hợp.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                            {currentCourses.map((course) => (
-                                <Link key={course._id} to={`/detail/${course._id}`} className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-300">
-                                    <div className="relative aspect-video overflow-hidden">
-                                        <img alt={course.title} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" src={course.image} />
-                                        <div className="absolute top-3 left-3 flex flex-col gap-2">
-                                            <span className="px-2 py-1 bg-primary text-white text-[10px] font-bold uppercase rounded tracking-wider">New</span>
+                        <div className="space-y-12">
+                            {currentOwnedCourses.length > 0 && (
+                                <section>
+                                    <div className="mb-5 flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Khóa học của tôi</h3>
+                                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Những khóa học bạn đã sở hữu và có thể học ngay.</p>
                                         </div>
-                                        <button onClick={(e) => e.stopPropagation()} className="absolute top-3 right-3 p-2 bg-white/20 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <span className="material-symbols-outlined text-lg">favorite</span>
-                                        </button>
+                                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                            {currentOwnedCourses.length} khóa học
+                                        </span>
                                     </div>
-                                    <div className="p-4">
-                                        <h3 className="font-bold text-slate-900 dark:text-white leading-tight group-hover:text-primary transition-colors">{course.title}</h3>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{course.teacher}</p>
-                                        <div className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-500 dark:text-slate-400">
-                                            <span className="material-symbols-outlined text-[16px]">group</span>
-                                            <span>{getStudentCount(course).toLocaleString()} học viên</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 mt-2">
-                                            <span className="text-sm font-bold text-yellow-600">{course.avgRating || 0}</span>
-                                            <div className="flex text-yellow-500">
-                                                {[...Array(5)].map((_, i) => (
-                                                    <span key={i} className={`material-symbols-outlined ${i < Math.floor(course.avgRating || 0) ? 'fill' : ''} text-[14px]`}>star</span>
-                                                ))}
-                                            </div>
-                                            <span className="text-[12px] text-slate-400">({course.totalReviews || 0})</span>
-                                        </div>
-                                        <div className="flex items-baseline gap-2 mt-4">
-                                            <span className="text-lg font-bold text-slate-900 dark:text-white">${course.price}</span>
-                                        </div>
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                                        {currentOwnedCourses.map((course) => (
+                                            <Link key={course._id} to={`/detail/${course._id}`} className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-300">
+                                                <div className="relative aspect-video overflow-hidden">
+                                                    <img alt={course.title} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" src={course.image} />
+                                                    <div className="absolute top-3 left-3 flex flex-col gap-2">
+                                                        <span className="px-2 py-1 bg-emerald-600 text-white text-[10px] font-bold uppercase rounded tracking-wider">Khóa học của tôi</span>
+                                                    </div>
+                                                    <button onClick={(e) => e.stopPropagation()} className="absolute top-3 right-3 p-2 bg-white/20 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <span className="material-symbols-outlined text-lg">favorite</span>
+                                                    </button>
+                                                </div>
+                                                <div className="p-4">
+                                                    <h3 className="font-bold text-slate-900 dark:text-white leading-tight group-hover:text-primary transition-colors">{course.title}</h3>
+                                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{course.teacher}</p>
+                                                    <div className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+                                                        <span className="material-symbols-outlined text-[16px]">group</span>
+                                                        <span>{getStudentCount(course).toLocaleString()} học viên</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <span className="text-sm font-bold text-yellow-600">{course.avgRating || 0}</span>
+                                                        <div className="flex text-yellow-500">
+                                                            {[...Array(5)].map((_, i) => (
+                                                                <span key={i} className={`material-symbols-outlined ${i < Math.floor(course.avgRating || 0) ? 'fill' : ''} text-[14px]`}>star</span>
+                                                            ))}
+                                                        </div>
+                                                        <span className="text-[12px] text-slate-400">({course.totalReviews || 0})</span>
+                                                    </div>
+                                                    <div className="flex items-baseline gap-2 mt-4">
+                                                        <span className="text-lg font-bold text-slate-900 dark:text-white">${course.price}</span>
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        ))}
                                     </div>
-                                </Link>
-                            ))}
+                                </section>
+                            )}
+
+                            {currentDiscoverCourses.length > 0 && (
+                                <section>
+                                    <div className="mb-5 flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Khám phá thêm</h3>
+                                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Những khóa học bạn chưa sở hữu.</p>
+                                        </div>
+                                        <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                                            {currentDiscoverCourses.length} khóa học
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                                        {currentDiscoverCourses.map((course) => (
+                                            <Link key={course._id} to={`/detail/${course._id}`} className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-300">
+                                                <div className="relative aspect-video overflow-hidden">
+                                                    <img alt={course.title} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" src={course.image} />
+                                                    <div className="absolute top-3 left-3 flex flex-col gap-2">
+                                                        <span className="px-2 py-1 bg-primary text-white text-[10px] font-bold uppercase rounded tracking-wider">New</span>
+                                                    </div>
+                                                    <button onClick={(e) => e.stopPropagation()} className="absolute top-3 right-3 p-2 bg-white/20 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <span className="material-symbols-outlined text-lg">favorite</span>
+                                                    </button>
+                                                </div>
+                                                <div className="p-4">
+                                                    <h3 className="font-bold text-slate-900 dark:text-white leading-tight group-hover:text-primary transition-colors">{course.title}</h3>
+                                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{course.teacher}</p>
+                                                    <div className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+                                                        <span className="material-symbols-outlined text-[16px]">group</span>
+                                                        <span>{getStudentCount(course).toLocaleString()} học viên</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <span className="text-sm font-bold text-yellow-600">{course.avgRating || 0}</span>
+                                                        <div className="flex text-yellow-500">
+                                                            {[...Array(5)].map((_, i) => (
+                                                                <span key={i} className={`material-symbols-outlined ${i < Math.floor(course.avgRating || 0) ? 'fill' : ''} text-[14px]`}>star</span>
+                                                            ))}
+                                                        </div>
+                                                        <span className="text-[12px] text-slate-400">({course.totalReviews || 0})</span>
+                                                    </div>
+                                                    <div className="flex items-baseline gap-2 mt-4">
+                                                        <span className="text-lg font-bold text-slate-900 dark:text-white">${course.price}</span>
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
                         </div>
                     )}
                     {/* Pagination */}

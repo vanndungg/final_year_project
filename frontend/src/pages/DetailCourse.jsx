@@ -204,6 +204,7 @@ const DetailCourse = () => {
     }
 
     const isEnrolled = user?.enrolledCourses?.some((item) => String(item?._id || item) === String(course._id));
+    const isInCart = user?.cart?.some((item) => String(item?._id || item) === String(course._id));
     const isPaidCourse = Number(course?.price || 0) > 0;
     const isAdmin = Number(user?.role) === 1;
     const canStudy = isEnrolled || isAdmin;
@@ -245,7 +246,7 @@ const DetailCourse = () => {
         }
     };
 
-    const handleAddToCartAndCheckout = async () => {
+    const handleAddToCart = async () => {
         if (!isLogged) {
             navigate('/login');
             return;
@@ -255,8 +256,7 @@ const DetailCourse = () => {
         const existed = currentCart.some((item) => String(item?._id || item) === String(course._id));
 
         if (existed) {
-            toast.info('Khoa hoc da co trong gio hang.');
-            navigate('/checkout');
+            toast.info('Khoa hoc da co trong gio hang. Ban co the bam "Thanh toan ngay".');
             return;
         }
 
@@ -284,7 +284,6 @@ const DetailCourse = () => {
             setUser(userRes.data);
 
             toast.success('Da them khoa hoc vao gio hang.');
-            navigate('/checkout');
         } catch (error) {
             toast.error(error.response?.data?.msg || 'Khong the them vao gio hang.');
         } finally {
@@ -630,7 +629,7 @@ const DetailCourse = () => {
 
                     {!canStudy && (
                         <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
-                            Ban chua dang ky khoa hoc, vi vay khong the hoc lesson. Hay bam Dang ky hoc ngay de mo noi dung.
+                            Ban chua so huu khoa hoc, vi vay khong the hoc lesson. Hay bam Them vao gio hang de tien hanh thanh toan.
                         </div>
                     )}
 
@@ -818,11 +817,11 @@ const DetailCourse = () => {
                             </button>
                         ) : (
                             <button
-                                onClick={isPaidCourse ? handleAddToCartAndCheckout : handleEnrollment}
+                                onClick={isPaidCourse ? (isInCart ? () => navigate('/checkout') : handleAddToCart) : handleEnrollment}
                                 disabled={loading}
                                 className="w-full rounded-2xl bg-blue-600 py-4 font-black text-white shadow-xl transition-all hover:bg-blue-700 active:scale-95"
                             >
-                                {loading ? 'DANG XU LY...' : (isPaidCourse ? 'MUA NGAY' : 'DANG KY HOC NGAY')}
+                                {loading ? 'DANG XU LY...' : (isPaidCourse ? (isInCart ? 'THANH TOAN NGAY' : 'THEM VAO GIO HANG') : 'DANG KY HOC NGAY')}
                             </button>
                         )}
                     </div>
