@@ -200,6 +200,39 @@ const userCtrl = {
         }
     },
 
+    updateAvatar: async (req, res) => {
+        try {
+            const avatar = String(req.body?.avatar || '').trim();
+
+            if (avatar && !/^data:image\//.test(avatar) && !/^https?:\/\//i.test(avatar)) {
+                return res.status(400).json({ msg: 'Định dạng avatar không hợp lệ.' });
+            }
+
+            if (avatar.length > 4 * 1024 * 1024) {
+                return res.status(400).json({ msg: 'Ảnh đại diện quá lớn.' });
+            }
+
+            const updatedUser = await Users.findByIdAndUpdate(
+                req.user.id,
+                { avatar },
+                { new: true }
+            )
+                .select('-password')
+                .populate('enrolledCourses');
+
+            if (!updatedUser) {
+                return res.status(404).json({ msg: 'Người dùng không tồn tại.' });
+            }
+
+            return res.json({
+                msg: 'Cập nhật avatar thành công.',
+                user: updatedUser
+            });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
     // 5. Quản lý Giỏ hàng
     addCart: async (req, res) => {
         try {

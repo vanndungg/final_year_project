@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import Courses from './pages/Courses';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Profile from './pages/Profile';
 import DetailCourse from './pages/DetailCourse';
 import Checkout from './pages/Checkout';
 import PaymentCheckout from './pages/PaymentCheckout';
@@ -49,6 +50,7 @@ function App() {
             <Route path="/courses" element={<Courses />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/detail/:id" element={<DetailCourse />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/payment-checkout" element={<PaymentCheckout />} />

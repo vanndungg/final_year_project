@@ -36,6 +36,7 @@ const authAdmin = require('../middleware/authAdmin');
 
 // 1. Lấy thông tin cá nhân
 router.get('/infor', auth, userCtrl.getUser); 
+router.patch('/update_avatar', auth, userCtrl.updateAvatar);
 
 // 2. Quản lý Giỏ hàng
 router.patch('/addcart', auth, userCtrl.addCart);

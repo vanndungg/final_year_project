@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useRef } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { GlobalState } from '../GlobalState';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
@@ -7,12 +7,21 @@ function Header() {
     const location = useLocation();
     const navigate = useNavigate();
     const searchInputRef = useRef(null);
+    const accountMenuRef = useRef(null);
+    const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
     const userAPI = state?.userAPI;
     const [isLogged, setIsLogged] = userAPI?.isLogged || [false, () => {}];
     const [user] = userAPI?.user || [null];
     const [isAdmin] = userAPI?.isAdmin || [false];
     const cartCount = Array.isArray(user?.cart) ? user.cart.length : 0;
+
+    const accountRoleLabel = useMemo(() => {
+        const role = Number(user?.role);
+        if (role === 1) return 'Admin';
+        if (role === 2) return 'Giáo viên';
+        return 'Học viên';
+    }, [user?.role]);
 
     const searchTerm = useMemo(() => {
         const params = new URLSearchParams(location.search);
@@ -24,6 +33,19 @@ function Header() {
         setIsLogged(false);
         window.location.href = "/";
     };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (accountMenuRef.current && !accountMenuRef.current.contains(event.target)) {
+                setIsAccountMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const handleSearchSubmit = (event) => {
         event.preventDefault();
@@ -90,16 +112,56 @@ function Header() {
                         )}
                     </Link>
                     {isLogged ? (
-                        <div className="flex items-center gap-4">
-                            <span className="font-semibold text-slate-800 dark:text-slate-200">
-                                👋 Chào, <span className="text-primary">{user?.name || 'Học viên'}</span>
-                            </span>
-                            <button 
-                                onClick={logoutUser}
-                                className="bg-red-500 text-white px-3 py-1.5 rounded hover:bg-red-600 transition shadow-sm text-sm"
+                        <div className="relative" ref={accountMenuRef}>
+                            <button
+                                type="button"
+                                onClick={() => setIsAccountMenuOpen((prev) => !prev)}
+                                className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-slate-200 transition hover:border-primary dark:border-slate-700"
+                                aria-haspopup="menu"
+                                aria-expanded={isAccountMenuOpen}
+                                aria-label="Mở menu tài khoản"
                             >
-                                Đăng xuất
+                                <img
+                                    src={user?.avatar || 'https://via.placeholder.com/80'}
+                                    alt={user?.name || 'Avatar'}
+                                    className="h-full w-full object-cover"
+                                />
                             </button>
+
+                            {isAccountMenuOpen && (
+                                <div className="absolute right-0 mt-3 w-72 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                                    <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-4 dark:border-slate-800">
+                                        <img
+                                            src={user?.avatar || 'https://via.placeholder.com/80'}
+                                            alt={user?.name || 'Avatar'}
+                                            className="h-12 w-12 rounded-full object-cover"
+                                        />
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{user?.name || 'Học viên'}</p>
+                                            <p className="mt-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">{accountRoleLabel}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-2">
+                                        <Link
+                                            to="/profile"
+                                            onClick={() => setIsAccountMenuOpen(false)}
+                                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                                        >
+                                            <span className="material-symbols-outlined text-[18px]">person</span>
+                                            Xem profile
+                                        </Link>
+                                        <button
+                                            type="button"
+                                            onClick={logoutUser}
+                                            className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:hover:bg-red-950/30"
+                                        >
+                                            <span className="material-symbols-outlined text-[18px]">logout</span>
+                                            Đăng xuất
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="flex items-center gap-4">

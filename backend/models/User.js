@@ -16,6 +16,10 @@ const UserSchema = new mongoose.Schema({
         type: String, 
         required: [true, "Vui lòng nhập mật khẩu"] 
     },
+    avatar: {
+        type: String,
+        default: ''
+    },
     role: { 
         type: Number, // ✅ Bắt buộc phải là Number
         default: 0
