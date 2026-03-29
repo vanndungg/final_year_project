@@ -4,6 +4,24 @@ const cors = require('cors');
 const helmet = require('helmet');
 require('dotenv').config();
 
+/*
+    ==================== BACKEND ENTRY (BƯỚC 6) ====================
+    Hãy đọc file này sau App / GlobalState / axiosClient ở frontend.
+
+    File này làm gì theo đúng thứ tự:
+    1) Tạo app Express
+    2) Gắn middleware (json parser, cors, security)
+    3) Gắn các nhóm route (/api/users, /api/courses, ...)
+    4) Gắn bộ xử lý lỗi chung
+    5) Kết nối MongoDB
+    6) Khởi động server
+
+    Mẹo cho người mới:
+    Nếu frontend gọi /api/something mà lỗi,
+    hãy kiểm tra file này trước để xem route đó đã được mount chưa.
+    =============================================================
+*/
+
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 

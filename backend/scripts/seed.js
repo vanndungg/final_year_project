@@ -15,6 +15,23 @@ const STUDENT_COUNT = 5;
 const COURSE_COUNT = 5;
 const LESSONS_PER_COURSE = 5;
 
+const DEFAULT_PASSWORD = '123456';
+
+const ACCOUNT_SEEDS = {
+    admin: {
+        name: 'Admin EduLearn',
+        email: 'admin@gmail.com',
+        role: 1,
+        avatar: 'https://i.pravatar.cc/200?img=12'
+    },
+    teacher: {
+        name: 'Teacher EduLearn',
+        email: 'teacher@gmail.com',
+        role: 2,
+        avatar: 'https://i.pravatar.cc/200?img=32'
+    }
+};
+
 const COURSE_CATEGORIES = ['Development', 'Design & Creative', 'Marketing', 'Business', 'Data'];
 const COURSE_LEVELS = ['beginner', 'intermediate', 'advanced', 'all-levels', 'beginner'];
 const LESSON_TYPE_SEQUENCE = ['video', 'document', 'quiz', 'assignment', 'video'];
@@ -124,6 +141,31 @@ const buildLessonPayload = (course, lessonIndex) => {
     };
 };
 
+const buildPaymentPayload = ({ student, course }) => {
+    const createdAt = new Date(Date.now() - randomInt(1, 20) * 24 * 60 * 60 * 1000);
+    const total = Number(course.price || 0);
+
+    return {
+        user_id: String(student._id),
+        name: student.name,
+        email: student.email,
+        paymentID: `PAY-${course._id.toString().slice(-4)}-${student._id.toString().slice(-4)}`,
+        paymentCode: `SEED-${course._id.toString().slice(-3).toUpperCase()}-${student._id.toString().slice(-3).toUpperCase()}`,
+        cart: [course],
+        subtotal: total,
+        discount: 0,
+        couponCode: '',
+        total,
+        status: 'paid',
+        gateway: total > 0 ? 'VNPAY' : 'FREE',
+        transferAmount: total,
+        isFulfilled: true,
+        paidAt: createdAt,
+        createdAt,
+        updatedAt: createdAt
+    };
+};
+
 const seedData = async () => {
     let connected = false;
 
@@ -147,20 +189,30 @@ const seedData = async () => {
             User.deleteMany({})
         ]);
 
-        const passwordHash = await bcrypt.hash('123456', 10);
+        const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 
         const admin = await User.create({
-            name: 'Admin EduLearn',
-            email: 'admin@edulearn.local',
+            name: ACCOUNT_SEEDS.admin.name,
+            email: ACCOUNT_SEEDS.admin.email,
             password: passwordHash,
-            role: 1
+            role: ACCOUNT_SEEDS.admin.role,
+            avatar: ACCOUNT_SEEDS.admin.avatar
+        });
+
+        const teacher = await User.create({
+            name: ACCOUNT_SEEDS.teacher.name,
+            email: ACCOUNT_SEEDS.teacher.email,
+            password: passwordHash,
+            role: ACCOUNT_SEEDS.teacher.role,
+            avatar: ACCOUNT_SEEDS.teacher.avatar
         });
 
         const studentPayloads = Array.from({ length: STUDENT_COUNT }, (_, index) => ({
             name: `Hoc vien ${index + 1}`,
-            email: `student${index + 1}@edulearn.local`,
+            email: `student${index + 1}@gmail.com`,
             password: passwordHash,
             role: 0,
+            avatar: `https://i.pravatar.cc/200?img=${50 + index}`,
             enrolledCourses: []
         }));
 
@@ -177,7 +229,7 @@ const seedData = async () => {
                 pricingType: isFree ? 'free' : 'paid',
                 price: isFree ? 0 : 300000 + index * 50000,
                 currency: 'VND',
-                teacher: admin.name,
+                teacher: teacher.name,
                 visibility: 'public',
                 level: COURSE_LEVELS[index % COURSE_LEVELS.length]
             };
@@ -229,23 +281,25 @@ const seedData = async () => {
                     });
                 }
 
+                const completedLessons = [];
+                const completedLessonIds = new Set();
+
+                [...completedCandidates, ...(assignmentSubmissions.length > 0 && assignmentLesson ? [assignmentLesson._id] : [])]
+                    .forEach((lessonId) => {
+                        const normalizedId = String(lessonId || '');
+                        if (!normalizedId || completedLessonIds.has(normalizedId)) return;
+                        completedLessonIds.add(normalizedId);
+                        completedLessons.push(lessonId);
+                    });
+
                 progresses.push({
                     userId: student._id,
                     courseId: course._id,
-                    completedLessons: completedCandidates,
+                    completedLessons,
                     assignmentSubmissions
                 });
 
-                payments.push({
-                    user_id: String(student._id),
-                    name: student.name,
-                    email: student.email,
-                    paymentID: `PAY-${course._id.toString().slice(-4)}-${student._id.toString().slice(-4)}`,
-                    cart: [course],
-                    total: Number(course.price || 0),
-                    status: true,
-                    createdAt: new Date(Date.now() - randomInt(1, 20) * 24 * 60 * 60 * 1000)
-                });
+                payments.push(buildPaymentPayload({ student, course }));
             }
 
             const reviewCount = randomInt(1, 3);
@@ -277,8 +331,10 @@ const seedData = async () => {
 
         console.log('-----------------------------------------');
         console.log('Seed thanh cong voi du lieu test nho gon:');
-        console.log('- 1 tai khoan admin');
-        console.log('- 5 tai khoan hoc vien');
+        console.log(`- Admin: ${ACCOUNT_SEEDS.admin.email} / ${DEFAULT_PASSWORD}`);
+        console.log(`- Teacher: ${ACCOUNT_SEEDS.teacher.email} / ${DEFAULT_PASSWORD}`);
+        console.log(`- Student mau: student1@gmail.com / ${DEFAULT_PASSWORD}`);
+        console.log(`- ${STUDENT_COUNT} tai khoan hoc vien`);
         console.log('- 5 khoa hoc (moi khoa 3-5 hoc vien)');
         console.log('- Moi khoa hoc co 5 lessons');
         console.log('- Quiz lesson co bo cau hoi + dap an dung');
