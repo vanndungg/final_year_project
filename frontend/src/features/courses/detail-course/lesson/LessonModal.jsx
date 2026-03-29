@@ -1,10 +1,12 @@
+
+
 import React from 'react';
 import { getYoutubeEmbedUrl, normalizeLessonType } from './LessonUtils';
 import VideoLessonContent from './video/VideoContent';
 import DocumentLessonContent from './document/DocumentContent';
 import QuizLessonContent from './quiz/QuizContent';
 import AssignmentLessonContent from './assignment/AssignmentContent';
-
+// hien thi modal bai hoc va noi dung tuong ung theo lesson type.
 const LessonModal = ({
     activeLesson,
     pdfBlobUrl,

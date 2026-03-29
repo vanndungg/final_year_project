@@ -1,3 +1,5 @@
+
+
 const mongoose = require('mongoose');
 
 const COURSE_STATUSES = ['draft', 'publish'];
@@ -5,11 +7,12 @@ const COURSE_PRICING_TYPES = ['paid', 'free'];
 const COURSE_VISIBILITY_TYPES = ['public', 'private', 'unlisted'];
 const COURSE_LEVEL_TYPES = ['beginner', 'intermediate', 'advanced', 'all-levels'];
 
+// dinh nghia schema khoa hoc.
 const CourseSchema = new mongoose.Schema({
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true },
     category: { type: String, required: true, trim: true },
-    image: { type: String, required: true }, // Link ảnh khóa học
+    image: { type: String, required: true },
     status: {
         type: String,
         enum: COURSE_STATUSES,
@@ -63,6 +66,7 @@ CourseSchema.pre('validate', function normalizePricing(next) {
     }
 });
 
+// tao model Course.
 const CourseModel = mongoose.model('Course', CourseSchema);
 
 module.exports = CourseModel;

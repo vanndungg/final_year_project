@@ -1,7 +1,9 @@
+
+
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { GlobalState } from '../../app/providers/GlobalState';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-
+// hien thi thanh header, tim kiem, gio hang va menu tai khoan.
 function Header() {
     const state = useContext(GlobalState);
     const location = useLocation();
@@ -29,7 +31,7 @@ function Header() {
         const params = new URLSearchParams(location.search);
         return location.pathname === '/courses' ? params.get('q') || '' : '';
     }, [location.pathname, location.search]);
-
+    // dang xuat user va xoa du lieu phien dang nhap hien tai.
     const logoutUser = () => {
         localStorage.clear();
         setIsLogged(false);
@@ -37,6 +39,7 @@ function Header() {
     };
 
     useEffect(() => {
+        // dong menu tai khoan khi click ra ngoai.
         const handleClickOutside = (event) => {
             if (accountMenuRef.current && !accountMenuRef.current.contains(event.target)) {
                 setIsAccountMenuOpen(false);
@@ -48,7 +51,7 @@ function Header() {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
-
+    // dua tu khoa tim kiem len url trang khoa hoc.
     const handleSearchSubmit = (event) => {
         event.preventDefault();
 

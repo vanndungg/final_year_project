@@ -1,11 +1,12 @@
-import React, { useState, useContext } from 'react'; // 1. Thêm useContext
+
+
+import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosClient from '../../../shared/api/axiosClient';
 import { toast } from 'react-toastify';
-import { GlobalState } from '../../../app/providers/GlobalState'; // 2. Import GlobalState
-
+import { GlobalState } from '../../../app/providers/GlobalState';
+// hien thi form dang nhap va cap nhat trang thai phien dang nhap.
 function Login() {
-    // 3. Lấy hàm setIsLogged từ GlobalState
     const state = useContext(GlobalState);
     const [, setIsLogged] = state.userAPI.isLogged;
     const [, setUserGlobal] = state.userAPI.user;
@@ -22,24 +23,24 @@ function Login() {
     const loginSubmit = async e => {
         e.preventDefault();
         try {
-            // Gọi API đăng nhập
+            // gui thong tin dang nhap len backend.
             const res = await axiosClient.post('/login', { ...user });
 
-            // Lưu thông tin vào localStorage để duy trì đăng nhập khi F5
+            // luu token de giu trang thai dang nhap sau khi tai lai trang.
             localStorage.setItem('firstLogin', true);
             localStorage.setItem('access_token', res.data.access_token);
             
-            // 4. Cập nhật State ngay lập tức để Header thay đổi giao diện
+            // cap nhat global state ngay sau khi dang nhap thanh cong.
             setToken(res.data.access_token);
             setIsLogged(true);
-            // Cập nhật thông tin user ngay lập tức
+            // luu thong tin user vao context neu backend tra ve.
             if (res.data.user) {
                 setUserGlobal(res.data.user);
             }
             
             toast.success("Đăng nhập thành công! 🚀");
             
-            // Chuyển về trang chủ sau 1 giây
+            // chuyen ve trang chu sau khi hien thong bao.
             setTimeout(() => navigate('/'), 1000);
             
         } catch (err) {

@@ -1,6 +1,8 @@
+
+
 import React from 'react';
 import { getLessonTypeMeta, normalizeLessonType } from './lesson/LessonUtils';
-
+// hien thi danh sach lesson va tien do hoc tap cua khoa hoc.
 const LessonsSection = ({
     lessons,
     canStudy,

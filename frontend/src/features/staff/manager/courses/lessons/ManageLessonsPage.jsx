@@ -1,12 +1,14 @@
+
+
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { GlobalState } from '../../../../../app/providers/GlobalState';
 import axiosClient from '../../../../../shared/api/axiosClient';
 import { toast } from 'react-toastify';
 import { getLessonTypeMeta, normalizePublishStatus } from './lessonAdminUtils';
-
+// hien thi danh sach lesson de admin/staff quan ly.
 const ManageLessons = () => {
-    const params = useParams(); // Lấy courseId từ URL
+    const params = useParams();
     const state = useContext(GlobalState);
     const [token = ''] = state?.token || [''];
     
@@ -16,21 +18,16 @@ const ManageLessons = () => {
     const [callback, setCallback] = useState(false);
 
     useEffect(() => {
+        // tai ten khoa hoc va danh sach lesson theo course id.
         const getLessonsData = async () => {
             setLoading(true);
             try {
-                // 1. Lấy thông tin chi tiết khóa học để hiển thị tên
                 const resCourse = await axiosClient.get(`/courses/${params.courseId}`);
                 setCourseName(resCourse.data.title || "Khóa học");
 
-                // 2. Lấy danh sách bài học của khóa này
-                // Lưu ý: Kiểm tra đường dẫn này có khớp với Router ở Backend không
                 const resLessons = await axiosClient.get(`/lessons/${params.courseId}`);
-                
-                // Log ra console để bạn kiểm tra cấu trúc dữ liệu thực tế
                 console.log("Dữ liệu nhận được từ Backend:", resLessons.data);
 
-                // Tối ưu: Tự động bóc tách dữ liệu nếu Backend trả về { lessons: [...] } hoặc trực tiếp [...]
                 const finalData = resLessons.data.lessons || resLessons.data;
                 
                 if (Array.isArray(finalData)) {
@@ -53,7 +50,7 @@ const ManageLessons = () => {
         }
     }, [params.courseId, callback]);
 
-    // Hàm xóa bài học
+    // xoa lesson va tai lai danh sach sau khi thanh cong.
     const deleteLesson = async (id) => {
         if (window.confirm("❗ Bạn có chắc chắn muốn xóa bài học này không?")) {
             try {

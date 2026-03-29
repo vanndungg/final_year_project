@@ -1,3 +1,5 @@
+
+
 import React, { useContext, useMemo, useState } from 'react';
 import { GlobalState } from '../../../../app/providers/GlobalState';
 import axiosClient from '../../../../shared/api/axiosClient';
@@ -5,7 +7,7 @@ import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom';
 import AdminPanelLayout from '../../pages/AdminPanelLayout';
 import { getLessonCount, getStudentCount, normalizeCourseStatus } from '../../../../shared/utils/courseDataUtils';
-
+// hien thi danh sach khoa hoc cho admin/staff quan ly.
 const ManageCourses = () => {
     const state = useContext(GlobalState);
     const [courses = []] = state?.coursesAPI?.courses || [[]];
@@ -53,7 +55,7 @@ const ManageCourses = () => {
         : totalCourses;
     const totalLessons = safeCourses.reduce((sum, course) => sum + getLessonCount(course), 0);
     const totalStudents = safeCourses.reduce((sum, course) => sum + getStudentCount(course), 0);
-
+    // xoa khoa hoc va tai lai danh sach sau khi thanh cong.
     const deleteCourse = async (id) => {
         if (!token) {
             toast.error('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.');

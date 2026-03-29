@@ -1,3 +1,5 @@
+
+
 import React, { useContext, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -5,7 +7,7 @@ import axiosClient from '../../../shared/api/axiosClient';
 import { GlobalState } from '../../../app/providers/GlobalState';
 import { formatVnd } from '../paymentUtils';
 import useRefreshCurrentUser from '../useRefreshCurrentUser';
-
+// hien thi gio hang, ma giam gia va tao don thanh toan vnpay.
 const Checkout = () => {
     const navigate = useNavigate();
     const state = useContext(GlobalState);
@@ -42,7 +44,7 @@ const Checkout = () => {
             .filter((course) => !cartIds.has(String(course?._id || '')) && !enrolledIds.has(String(course?._id || '')))
             .slice(0, 4);
     }, [courses, validItems, enrolledIds]);
-
+    // kiem tra va ap dung ma giam gia tren giao dien.
     const applyCoupon = () => {
         const nextCode = String(couponInput || '').trim().toUpperCase();
 
@@ -61,7 +63,7 @@ const Checkout = () => {
     };
 
     const refreshUser = useRefreshCurrentUser(token, setUser);
-
+    // xoa khoa hoc khoi gio hang va dong bo lai thong tin user.
     const removeFromCart = async (courseId) => {
         if (!token) {
             toast.error('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.');
@@ -81,7 +83,7 @@ const Checkout = () => {
             toast.error(error.response?.data?.msg || 'Không thể xóa khóa học khỏi giỏ hàng.');
         }
     };
-
+    // tao payment pending va chuyen sang trang thanh toan.
     const handleCheckout = async () => {
         if (!isLogged) {
             navigate('/login');

@@ -1,7 +1,9 @@
+
+
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { GlobalState } from '../../../app/providers/GlobalState';
-
+// tra ve nhan role de hien thi trong sidebar admin.
 const getRoleLabel = (roleValue) => {
     const normalizedRole = Number(roleValue);
 
@@ -9,7 +11,7 @@ const getRoleLabel = (roleValue) => {
     if (normalizedRole === 2) return 'Giáo viên';
     return 'Học viên';
 };
-
+// tao class cho tung item dieu huong trong sidebar.
 const buildNavItemClassName = (isActive) => (
     `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
         isActive
@@ -17,7 +19,7 @@ const buildNavItemClassName = (isActive) => (
             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
     }`
 );
-
+// hien thi layout chung cua khu vuc admin/staff.
 const AdminPanelLayout = ({ children }) => {
     const location = useLocation();
     const state = useContext(GlobalState);

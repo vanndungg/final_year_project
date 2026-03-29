@@ -1,5 +1,7 @@
-const jwt = require('jsonwebtoken');
 
+
+const jwt = require('jsonwebtoken');
+// xac thuc JWT cho request.
 const auth = async (req, res, next) => {
     try {
         let token = req.header("Authorization");
@@ -10,7 +12,7 @@ const auth = async (req, res, next) => {
             token = token.replace(/^Bearer\s+/i, '').trim();
         }
 
-        // Helper để verify bằng secret (callback -> promise)
+        // xac minh token bang secret.
         const verifyWith = (secret) => new Promise(resolve => {
             jwt.verify(token, secret, (err, user) => resolve({ err, user }));
         });

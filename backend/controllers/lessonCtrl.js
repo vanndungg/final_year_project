@@ -1,3 +1,5 @@
+
+
 const Lessons = require('../models/Lesson');
 const Users = require('../models/User');
 const Progress = require('../models/Progress');
@@ -5,14 +7,14 @@ const Progress = require('../models/Progress');
 const LESSON_TYPE_VALUES = new Set(['video', 'document', 'quiz', 'assignment']);
 const LESSON_PUBLISH_VALUES = new Set(['draft', 'publish']);
 const LESSON_ACCESS_VALUES = new Set(['all', 'premium']);
-
+// chuan hoa du lieu dau vao.
 const normalizeText = (value) => String(value || '').trim();
-
+// chuyen doi du lieu ve kieu can dung.
 const toNumber = (value, fallback = 0) => {
     const numericValue = Number(value);
     return Number.isFinite(numericValue) ? numericValue : fallback;
 };
-
+// chuyen doi du lieu ve kieu can dung.
 const toBoolean = (value, fallback = false) => {
     if (typeof value === 'boolean') return value;
     if (typeof value === 'string') {
@@ -23,37 +25,37 @@ const toBoolean = (value, fallback = false) => {
     if (typeof value === 'number') return value !== 0;
     return fallback;
 };
-
+// chuan hoa du lieu dau vao.
 const normalizeLessonType = (value) => {
     const normalized = String(value || '').trim().toLowerCase();
     return LESSON_TYPE_VALUES.has(normalized) ? normalized : 'video';
 };
-
+// tao du lieu phu tro cho luong xu ly.
 const buildYoutubeUrlFromVideoId = (videoId) => {
     const normalizedVideoId = normalizeText(videoId);
     return normalizedVideoId ? `https://www.youtube.com/watch?v=${normalizedVideoId}` : '';
 };
-
+// chuan hoa du lieu dau vao.
 const normalizePublishStatus = (value, fallback = 'draft') => {
     const normalized = String(value || '').trim().toLowerCase();
     if (normalized === 'published') return 'publish';
     if (LESSON_PUBLISH_VALUES.has(normalized)) return normalized;
     return fallback;
 };
-
+// chuan hoa du lieu dau vao.
 const normalizeAccessControl = (value, fallback = 'all') => {
     const normalized = String(value || '').trim().toLowerCase();
     if (LESSON_ACCESS_VALUES.has(normalized)) return normalized;
     return fallback;
 };
-
+// chuan hoa du lieu dau vao.
 const normalizeDateValue = (value) => {
     if (!value) return null;
     const parsedDate = new Date(value);
     if (Number.isNaN(parsedDate.getTime())) return null;
     return parsedDate;
 };
-
+// chuan hoa du lieu dau vao.
 const normalizeQuizQuestions = (quizQuestionsInput) => {
     if (!quizQuestionsInput) return [];
 
@@ -88,7 +90,7 @@ const normalizeQuizQuestions = (quizQuestionsInput) => {
         })
         .filter(Boolean);
 };
-
+// chuan hoa du lieu dau vao.
 const normalizeLessonPayload = (rawPayload = {}, { requireCourseId = true } = {}) => {
     const title = normalizeText(rawPayload.title);
     const description = normalizeText(rawPayload.description);
@@ -185,6 +187,7 @@ const normalizeLessonPayload = (rawPayload = {}, { requireCourseId = true } = {}
 
 const lessonCtrl = {
     // 1. Lấy danh sách bài học theo Khóa học (Dành cho học viên & Admin)
+// lay du lieu phuc vu API hoac giao dien.
     getLessonsByCourse: async (req, res) => {
         try {
             const courseId = req.params.id;
@@ -243,6 +246,7 @@ const lessonCtrl = {
     },
 
     // 2. Lấy chi tiết 1 bài học (Dành cho trang Sửa - Edit Lesson)
+// lay du lieu phuc vu API hoac giao dien.
     getSingleLesson: async (req, res) => {
         try {
             const lesson = await Lessons.findById(req.params.id);
@@ -254,6 +258,7 @@ const lessonCtrl = {
     },
 
     // 3. Thêm bài học mới
+// tao du lieu moi hoac bo sung du lieu.
     createLesson: async (req, res) => {
         try {
             const { lessonPayload, error } = normalizeLessonPayload(req.body, { requireCourseId: true });
@@ -281,6 +286,7 @@ const lessonCtrl = {
     },
 
     // 4. Cập nhật bài học (Sửa)
+// cap nhat trang thai hoac du lieu hien co.
     updateLesson: async (req, res) => {
         try {
             const { lessonPayload, error } = normalizeLessonPayload(req.body, { requireCourseId: false });
@@ -339,6 +345,7 @@ const lessonCtrl = {
     },
 
     // 5. Xóa bài học
+// xoa du lieu khong con can thiet.
     deleteLesson: async (req, res) => {
         try {
             const deletedLesson = await Lessons.findByIdAndDelete(req.params.id);

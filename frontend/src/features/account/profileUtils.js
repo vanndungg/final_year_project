@@ -1,5 +1,6 @@
+// dinh dang phan tram tien do trong khoang 0 den 100.
 export const formatPercent = (value) => `${Math.max(0, Math.min(100, Number(value || 0)))}%`;
-
+// lay url anh khoa hoc tu nhieu kieu du lieu khac nhau.
 export const getCourseImage = (course) => {
     const image = course?.image;
     if (typeof image === 'string') return image;

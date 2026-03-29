@@ -1,8 +1,10 @@
+
+
 import React from 'react';
 
 export const filledStarStyle = { fontVariationSettings: "'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24" };
 export const outlineStarStyle = { fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" };
-
+// tra ve nhan mo ta theo so sao danh gia.
 export const getRatingLabel = (value) => {
     switch (value) {
         case 1: return 'Rat te';
@@ -13,7 +15,7 @@ export const getRatingLabel = (value) => {
         default: return 'Chon so sao phu hop';
     }
 };
-
+// render 5 ngoi sao theo diem danh gia hien tai.
 export const renderRatingStars = (value, sizeClass = 'text-sm') => (
     <div className="flex items-center gap-0.5">
         {Array.from({ length: 5 }, (_, index) => {
@@ -33,7 +35,7 @@ export const renderRatingStars = (value, sizeClass = 'text-sm') => (
         })}
     </div>
 );
-
+// tao chu cai dai dien tu ten nguoi danh gia.
 export const getInitials = (name) => {
     if (!name) return 'HV';
     return name
@@ -44,7 +46,7 @@ export const getInitials = (name) => {
         .join('')
         .toUpperCase();
 };
-
+    // doi thoi gian review thanh chuoi tuong doi de hien thi.
 export const formatRelativeReviewDate = (value) => {
     if (!value) return 'Vua xong';
 

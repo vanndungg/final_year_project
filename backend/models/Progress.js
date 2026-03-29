@@ -1,5 +1,8 @@
+
+
 const mongoose = require('mongoose');
 
+// dinh nghia schema tien do hoc.
 const progressSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -35,4 +38,5 @@ const progressSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// tao model Progress.
 module.exports = mongoose.model('Progress', progressSchema);

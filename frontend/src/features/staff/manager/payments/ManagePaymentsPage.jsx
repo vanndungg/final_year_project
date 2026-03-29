@@ -1,11 +1,13 @@
+
+
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { GlobalState } from '../../../../app/providers/GlobalState';
 import axiosClient from '../../../../shared/api/axiosClient';
 import { toast } from 'react-toastify';
 import AdminPanelLayout from '../../pages/AdminPanelLayout';
-
+// dinh dang so tien payment de hien thi trong bang.
 const formatVnd = (value) => `${Number(value || 0).toLocaleString('vi-VN')}đ`;
-
+// hien thi danh sach giao dich thanh toan thanh cong.
 const ManagePayments = () => {
     const state = useContext(GlobalState);
     const [token = ''] = state?.token || [''];
@@ -13,6 +15,7 @@ const ManagePayments = () => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        // tai danh sach payment da thanh toan thanh cong.
         const fetchSuccessfulPayments = async () => {
             if (!token) return;
 

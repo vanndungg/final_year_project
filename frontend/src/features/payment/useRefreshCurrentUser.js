@@ -1,6 +1,9 @@
+
+
 import { useCallback } from 'react';
 import axiosClient from '../../shared/api/axiosClient';
 
+// tai lai thong tin user hien tai sau khi payment hoac cart thay doi.
 export default function useRefreshCurrentUser(token, setUser) {
     return useCallback(async () => {
         if (!token) return;

@@ -1,7 +1,9 @@
+
+
 import React, { useContext } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { GlobalState } from '../../../app/providers/GlobalState';
-
+// chi cho phep admin hoac staff truy cap vao route ben trong.
 const StaffRoute = () => {
     const state = useContext(GlobalState);
     const [isLogged] = state?.userAPI?.isLogged || [false];

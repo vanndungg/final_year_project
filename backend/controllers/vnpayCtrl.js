@@ -2,9 +2,9 @@ const crypto = require('crypto');
 const Payments = require('../models/Payment');
 const Users = require('../models/User');
 const Courses = require('../models/Course');
-
+// chuan hoa du lieu dau vao.
 const normalize = (value) => String(value || '').trim();
-
+// sap xep object theo key.
 const sortObject = (obj) => {
     const sorted = {};
     Object.keys(obj || {}).sort().forEach((key) => {
@@ -12,14 +12,14 @@ const sortObject = (obj) => {
     });
     return sorted;
 };
-
+// tao du lieu phu tro cho luong xu ly.
 const buildQuery = (params) => {
     const sorted = sortObject(params);
     return Object.keys(sorted)
         .map((key) => `${key}=${encodeURIComponent(String(sorted[key])).replace(/%20/g, '+')}`)
         .join('&');
 };
-
+// hoan tat don thanh toan va cap quyen hoc.
 const fulfillPayment = async (paymentDoc) => {
     if (!paymentDoc || paymentDoc.isFulfilled) return;
 
@@ -46,7 +46,7 @@ const fulfillPayment = async (paymentDoc) => {
     paymentDoc.isFulfilled = true;
     await paymentDoc.save();
 };
-
+// xac minh chu ky VNPAY.
 const verifyVnpSignature = (query) => {
     const secureHash = normalize(query?.vnp_SecureHash);
     if (!secureHash) return false;
@@ -67,13 +67,13 @@ const verifyVnpSignature = (query) => {
     const signed = crypto.createHmac('sha512', hashSecret).update(Buffer.from(signData, 'utf-8')).digest('hex');
     return secureHash.toLowerCase() === signed.toLowerCase();
 };
-
+// phan tich du lieu dau vao ve dinh dang can dung.
 const parseAmount = (value) => {
     const normalized = String(value || '').replace(/[^0-9.-]/g, '');
     const parsed = Number(normalized);
     return Number.isFinite(parsed) ? parsed : 0;
 };
-
+// cap nhat thanh toan thanh cong.
 const applySuccessfulPayment = async (payment, query) => {
     if (!payment) return;
 
@@ -94,6 +94,7 @@ const applySuccessfulPayment = async (payment, query) => {
 };
 
 const vnpayCtrl = {
+// xu ly callback IPN tu VNPAY.
     ipn: async (req, res) => {
         try {
             if (!verifyVnpSignature(req.query)) {
@@ -129,7 +130,7 @@ const vnpayCtrl = {
             return res.status(200).json({ RspCode: '99', Message: error.message || 'Unknown error' });
         }
     },
-
+// xu ly URL tra ve tu VNPAY.
     returnUrl: async (req, res) => {
         try {
             const checksumValid = verifyVnpSignature(req.query);

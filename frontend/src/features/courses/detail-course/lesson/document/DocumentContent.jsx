@@ -1,5 +1,7 @@
-import React from 'react';
 
+
+import React from 'react';
+// hien thi tai lieu dang pdf hoac noi dung html cua lesson.
 const DocumentLessonContent = ({ activeLesson, pdfBlobUrl }) => {
     if (!activeLesson) return null;
 

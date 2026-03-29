@@ -1,3 +1,5 @@
+
+
 const router = require('express').Router();
 const lessonCtrl = require('../controllers/lessonCtrl');
 const auth = require('../middleware/auth');
@@ -5,6 +7,7 @@ const authAdmin = require('../middleware/authAdmin');
 const authStaff = require('../middleware/authStaff');
 
 // Middleware hỗ trợ: Không bắt buộc đăng nhập nhưng nếu có token thì giải mã để check quyền mua học
+// xu ly nghiep vu cua ham.
 const optionalAuth = (req, res, next) => {
     const token = req.header("Authorization");
     if(!token) return next(); 

@@ -1,10 +1,11 @@
+
+
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-
+// hien thi trang chu va xu ly thong bao sau khi thanh toan.
 const Home = () => {
-    // Note: Header handles login state / navigation for all pages
     const location = useLocation();
     const navigate = useNavigate();
 

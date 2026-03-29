@@ -1,3 +1,4 @@
+// tra ve icon va nhan hien thi theo loai bai hoc.
 export const getLessonTypeMeta = (lessonType) => {
     const normalizedType = String(lessonType || 'video').toLowerCase();
 
@@ -7,9 +8,9 @@ export const getLessonTypeMeta = (lessonType) => {
 
     return { icon: 'play_circle', iconClass: 'text-blue-600', label: 'Video' };
 };
-
+// chuan hoa lesson type ve dang chu thuong de so sanh.
 export const normalizeLessonType = (lessonType) => String(lessonType || 'video').trim().toLowerCase();
-
+// tao youtube embed url tu videoUrl hoac video_id.
 export const getYoutubeEmbedUrl = (lesson) => {
     const rawUrl = String(lesson?.videoUrl || '').trim();
     const rawVideoId = String(lesson?.video_id || '').trim();

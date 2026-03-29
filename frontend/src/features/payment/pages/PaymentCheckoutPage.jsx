@@ -1,3 +1,5 @@
+
+
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -5,7 +7,7 @@ import axiosClient from '../../../shared/api/axiosClient';
 import { GlobalState } from '../../../app/providers/GlobalState';
 import { formatVnd, gatewayResultRank } from '../paymentUtils';
 import useRefreshCurrentUser from '../useRefreshCurrentUser';
-
+// hien thi thong tin don thanh toan va dieu huong sang cong vnpay.
 const PaymentCheckout = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -21,7 +23,7 @@ const PaymentCheckout = () => {
     const [redirectingGateway, setRedirectingGateway] = useState(false);
     const [hasHandledPaidState, setHasHandledPaidState] = useState(false);
 
-    // Get payment ID from URL or session
+    // doc payment id va ket qua tra ve tu url hien tai.
     const searchParams = new URLSearchParams(window.location.search);
     const paymentId = searchParams.get('paymentId');
     const pathResult = location.pathname.startsWith('/payment/')
@@ -61,7 +63,7 @@ const PaymentCheckout = () => {
         }
     }, [hasHandledPaidState, navigate, refreshUser, token]);
 
-    // Load payment info on mount
+    // tai thong tin payment va link thanh toan khi vao trang.
     useEffect(() => {
         if (!paymentId || !token) {
             navigate('/checkout');
@@ -109,7 +111,7 @@ const PaymentCheckout = () => {
         }
     }, [paymentId, paymentResult]);
 
-    // Auto-polling
+    // tu dong kiem tra trang thai payment khi don chua thanh cong.
     useEffect(() => {
         if (!pendingPayment?._id || String(pendingPayment.status).toLowerCase() === 'paid') 
             return undefined;
@@ -120,7 +122,7 @@ const PaymentCheckout = () => {
 
         return () => clearInterval(intervalId);
     }, [checkPaymentStatus, pendingPayment?._id, pendingPayment?.status]);
-
+    // sao chep noi dung thanh toan vao clipboard.
     const copyText = async (text, successMessage) => {
         try {
             await navigator.clipboard.writeText(String(text || ''));
@@ -129,7 +131,7 @@ const PaymentCheckout = () => {
             toast.error('Không thể sao chép.');
         }
     };
-
+    // chuyen huong nguoi dung sang cong thanh toan vnpay.
     const submitGatewayCheckout = (event) => {
         event.preventDefault();
         if (!checkoutMeta?.paymentUrl) {

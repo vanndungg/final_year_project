@@ -1,6 +1,9 @@
+
+
 import { useEffect, useState } from 'react';
 import axiosClient from '../../shared/api/axiosClient';
 
+// tai tien do hoc tap cua tung khoa hoc trong profile.
 export default function useProfileProgress(enrolledCourses, token) {
     const [progressByCourse, setProgressByCourse] = useState({});
     const [loadingProgress, setLoadingProgress] = useState(false);
@@ -12,7 +15,7 @@ export default function useProfileProgress(enrolledCourses, token) {
         }
 
         let alive = true;
-
+    // goi api tien do cho tung khoa hoc da dang ky.
         const fetchProgress = async () => {
             setLoadingProgress(true);
             try {

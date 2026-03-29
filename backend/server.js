@@ -1,47 +1,32 @@
+
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 require('dotenv').config();
-
-/*
-    ==================== BACKEND ENTRY (BƯỚC 6) ====================
-    Hãy đọc file này sau App / GlobalState / axiosClient ở frontend.
-
-    File này làm gì theo đúng thứ tự:
-    1) Tạo app Express
-    2) Gắn middleware (json parser, cors, security)
-    3) Gắn các nhóm route (/api/users, /api/courses, ...)
-    4) Gắn bộ xử lý lỗi chung
-    5) Kết nối MongoDB
-    6) Khởi động server
-
-    Mẹo cho người mới:
-    Nếu frontend gọi /api/something mà lỗi,
-    hãy kiểm tra file này trước để xem route đó đã được mount chưa.
-    =============================================================
-*/
+// khoi tao backend, gan middleware va route, ket noi db roi chay server.
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
 const app = express();
 
-// --- 1. CẤU HÌNH MIDDLEWARE (Đặt trên cùng) ---
-// Tăng giới hạn để hỗ trợ file PDF dạng base64 (~10MB PDF → ~13MB base64)
+// cau hinh middleware de parse body, bao mat va cors.
+// tang gioi han body de nhan duoc du lieu pdf base64 lon.
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(helmet({ contentSecurityPolicy: false }));
 
-// Cấu hình CORS: Cho phép Frontend truy cập
+// cho phep frontend goi api tu domain local va ngrok.
 app.use(cors({
     origin: ['http://localhost:5173', 'http://127.0.0.1:5173', /\.ngrok-free\.app$/, /\.ngrok-free\.dev$/],
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Thêm PATCH cho update role/cart
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// --- 2. CẤU HÌNH SWAGGER ---
+// cau hinh swagger de hien thi tai lieu api.
 const swaggerOptions = {
     swaggerDefinition: {
         openapi: '3.0.0',
@@ -70,28 +55,25 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// --- 3. ĐĂNG KÝ CÁC ROUTES (Sắp xếp lại logic) ---
-
-// Nhóm Auth: Xử lý Đăng ký / Đăng nhập
-// Lưu ý: Đảm bảo trong authRouter dùng userCtrl đồng nhất với hệ thống số (0/1)
+// dang ky route auth.
 app.use('/api', require('./routes/authRouter')); 
 
-// Nhóm Users: Xử lý Profile, Giỏ hàng, Admin quản lý User
+// dang ky route nguoi dung.
 app.use('/api/users', require('./routes/userRouter'));
 
-// Nhóm Courses & Nội dung
+// dang ky route khoa hoc, bai hoc, review, tien do va thanh toan vnpay.
 app.use('/api/courses', require('./routes/courseRouter')); 
 app.use('/api/lessons', require('./routes/lessonRouter')); 
 app.use('/api/reviews', require('./routes/reviewRouter'));
 app.use('/api/progress', require('./routes/progressRouter'));
 app.use('/api/vnpay', require('./routes/vnpayRouter'));
 
-// --- 4. TRANG CHỦ BACKEND ---
+// tra thong diep kiem tra backend dang chay.
 app.get('/', (req, res) => {
     res.send("🚀 Backend E-Learning đang hoạt động. Truy cập <a href='/api-docs'>/api-docs</a> để xem tài liệu!");
 });
 
-// --- 5. XỬ LÝ LỖI TẬP TRUNG (ERROR HANDLING) ---
+// bat loi tap trung va tra ve json cho client.
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
     res.status(statusCode).json({
@@ -100,7 +82,7 @@ app.use((err, req, res, next) => {
     });
 });
 
-// --- 6. KẾT NỐI DATABASE VÀ KHỞI CHẠY ---
+// ket noi mongodb roi khoi dong server.
 const PORT = process.env.PORT || 5000;
 const URI = process.env.MONGODB_URL;
 

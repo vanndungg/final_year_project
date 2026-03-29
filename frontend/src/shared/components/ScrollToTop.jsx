@@ -1,6 +1,9 @@
+
+
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
+// dua trang ve dau moi khi chuyen route.
 export default function ScrollToTop() {
   const { pathname } = useLocation();
 

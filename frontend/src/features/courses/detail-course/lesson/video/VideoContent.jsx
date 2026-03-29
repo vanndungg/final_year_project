@@ -1,5 +1,7 @@
-import React from 'react';
 
+
+import React from 'react';
+// hien thi video upload, youtube hoac video url cua lesson.
 const VideoLessonContent = ({ activeLesson, getYoutubeEmbedUrl }) => {
     if (!activeLesson) return null;
 

@@ -1,7 +1,9 @@
+
+
 const Progress = require('../models/Progress');
 const Users = require('../models/User');
 const Lessons = require('../models/Lesson');
-
+// tao du lieu phu tro cho luong xu ly.
 const buildProgressPayload = async (progressDoc, courseId) => {
     const totalLessons = await Lessons.countDocuments({ courseId });
     const completedLessons = Array.isArray(progressDoc?.completedLessons)
@@ -29,6 +31,7 @@ const buildProgressPayload = async (progressDoc, courseId) => {
 
 const progressCtrl = {
     // Đánh dấu 1 bài học là đã hoàn thành
+// cap nhat trang thai hoac du lieu hien co.
     markComplete: async (req, res) => {
         try {
             const { courseId, lessonId } = req.body;
@@ -76,7 +79,7 @@ const progressCtrl = {
             return res.status(500).json({ msg: err.message });
         }
     },
-
+// cap nhat trang thai hoac du lieu hien co.
     unmarkComplete: async (req, res) => {
         try {
             const { courseId, lessonId } = req.body;
@@ -124,6 +127,7 @@ const progressCtrl = {
     },
 
     // Lấy tiến độ học tập của 1 khóa học
+// lay du lieu phuc vu API hoac giao dien.
     getProgress: async (req, res) => {
         try {
             const { courseId } = req.params;
@@ -138,7 +142,7 @@ const progressCtrl = {
             return res.status(500).json({ msg: err.message });
         }
     },
-
+// xu ly nghiep vu cua ham.
     submitAssignmentAnswer: async (req, res) => {
         try {
             const { courseId, lessonId, answer } = req.body;
@@ -178,7 +182,7 @@ const progressCtrl = {
             if (!progress) {
                 progress = new Progress({ userId, courseId, completedLessons: [], assignmentSubmissions: [] });
             }
-
+// xu ly nghiep vu cua ham.
             const existingSubmissionIndex = (progress.assignmentSubmissions || []).findIndex(
                 (item) => String(item.lessonId) === String(lessonId)
             );

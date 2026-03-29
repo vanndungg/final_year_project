@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
 
+
+import { useEffect, useRef, useState } from 'react';
+// tao url pdf tu resourceUrl cua lesson document.
 const getPdfUrlFromLesson = (lesson) => {
     if (lesson?.lessonType !== 'document' || !lesson?.resourceUrl) {
         return { url: null, shouldRevoke: false };
@@ -28,6 +30,7 @@ const getPdfUrlFromLesson = (lesson) => {
     }
 };
 
+// quan ly blob url pdf va tu dong giai phong bo nho khi doi lesson.
 export default function usePdfLessonUrl(activeLesson) {
     const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
     const previousBlobUrl = useRef(null);

@@ -1,17 +1,19 @@
+
+
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axiosClient from '../../../../shared/api/axiosClient';
 import { GlobalState } from '../../../../app/providers/GlobalState';
 import AdminPanelLayout from '../../pages/AdminPanelLayout';
-
+// dinh dang thoi gian cap nhat de hien thi trong bang.
 const formatDateTime = (value) => {
     if (!value) return '--';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '--';
     return date.toLocaleString();
 };
-
+// hien thi tien do hoc tap cua hoc vien trong mot khoa hoc.
 const ManageCourseStudents = () => {
     const { courseId } = useParams();
     const state = useContext(GlobalState);
@@ -24,7 +26,7 @@ const ManageCourseStudents = () => {
 
     useEffect(() => {
         let active = true;
-
+    // tai thong tin khoa hoc va danh sach tien do cua hoc vien.
         const fetchStudentProgress = async () => {
             if (!token || !courseId) return;
             setLoading(true);

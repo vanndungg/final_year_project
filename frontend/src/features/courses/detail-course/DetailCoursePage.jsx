@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '../../../shared/api/axiosClient';
@@ -10,31 +12,7 @@ import { getStudentCount } from '../../../shared/utils/courseDataUtils';
 import { normalizeLessonType } from './lesson/LessonUtils';
 import { renderRatingStars } from './review/ReviewUtils.jsx';
 import usePdfLessonUrl from './lesson/document/PdfUrl';
-
-/*
-  ==================== BƯỚC 4: LUỒNG CHÍNH CỦA HỌC VIÊN ====================
-  File này lớn vì nó gom nhiều hành động của học viên vào cùng một trang:
-  - Tải chi tiết khóa học, lessons, reviews
-  - Thêm giỏ hàng / đăng ký học
-  - Mở lesson để học
-  - Nộp quiz / assignment
-  - Cập nhật progress
-  - Gửi review
-
-  Cách đọc nhanh file này:
-  A) Đọc tất cả các useState trước để biết trang giữ dữ liệu gì
-  B) Tìm fetchData và useEffect lấy progress để hiểu dữ liệu vào từ đâu
-  C) Đọc các hàm hành động chính:
-      - handleAddToCart
-      - submitReview
-      - markLessonComplete
-  D) Nhìn phần return để biết UI được chia thành 3 khối:
-      - LessonModal
-      - LessonsSection
-      - CourseReviewsSection
-  ======================================================================
-*/
-
+// hien thi chi tiet khoa hoc, lesson, tien do hoc va danh gia cua hoc vien.
 const DetailCourse = () => {
     const params = useParams();
     const navigate = useNavigate();
@@ -88,7 +66,7 @@ const DetailCourse = () => {
 
     useEffect(() => {
         if (!params.id) return;
-
+        // tai thong tin khoa hoc, danh sach lesson va review.
         const fetchData = async () => {
             try {
                 const [courseRes, lessonsRes, reviewsRes] = await Promise.all([
@@ -121,7 +99,7 @@ const DetailCourse = () => {
             syncProgress({ completedLessons: [], assignmentSubmissions: [], completedCount: 0, totalLessons: 0, progressPercent: 0 });
             return;
         }
-
+        // tai tien do hoc tap cua user trong khoa hoc hien tai.
         const fetchProgress = async () => {
             try {
                 const response = await axiosClient.get(`/progress/${params.id}`, {
@@ -160,7 +138,7 @@ const DetailCourse = () => {
         const percentage = reviewCount > 0 ? Math.round((count / reviewCount) * 100) : 0;
         return { star, percentage };
     });
-
+    // dang ky khoa hoc mien phi cho user hien tai.
     const handleEnrollment = async () => {
         if (!isLogged) {
             navigate('/login');
@@ -182,7 +160,7 @@ const DetailCourse = () => {
             setLoading(false);
         }
     };
-
+    // them khoa hoc vao gio hang va dong bo lai user.
     const handleAddToCart = async () => {
         if (!isLogged) {
             navigate('/login');
@@ -227,7 +205,7 @@ const DetailCourse = () => {
             setLoading(false);
         }
     };
-
+    // gui danh gia khoa hoc len backend.
     const submitReview = async (event) => {
         event.preventDefault();
 
@@ -263,7 +241,7 @@ const DetailCourse = () => {
             setSubmittingReview(false);
         }
     };
-
+    // mo lesson va nap lai du lieu quiz hoac assignment lien quan.
     const openLesson = (lesson) => {
         if (!isLogged) {
             toast.info('Vui long dang nhap de hoc bai.');
@@ -286,7 +264,7 @@ const DetailCourse = () => {
         setQuizResult(null);
         setAssignmentAnswer(assignmentSubmissionMap.get(String(lesson?._id || ''))?.answer || '');
     };
-
+    // danh dau lesson da hoan thanh va dong bo tien do moi.
     const markLessonComplete = async (lesson, { silent = false } = {}) => {
         if (!token || !canStudy) return;
 
@@ -315,7 +293,7 @@ const DetailCourse = () => {
             }
         }
     };
-
+    // bo danh dau hoan thanh cua lesson da hoc.
     const unmarkLessonComplete = async (lesson, { silent = false } = {}) => {
         if (!token || !canStudy) return;
 
@@ -344,7 +322,7 @@ const DetailCourse = () => {
             }
         }
     };
-
+    // bat tat trang thai hoan thanh cua lesson sau khi xac nhan.
     const toggleLessonCompletion = async (lesson) => {
         if (!lesson) return;
 
@@ -360,7 +338,7 @@ const DetailCourse = () => {
 
         await markLessonComplete(lesson);
     };
-
+    // chon hanh dong chinh trong modal theo loai lesson.
     const handleLessonPrimaryAction = async () => {
         if (!activeLesson) return;
 
@@ -383,7 +361,7 @@ const DetailCourse = () => {
 
         await toggleLessonCompletion(activeLesson);
     };
-
+    // tra ve nhan hien thi cho nut hanh dong trong modal lesson.
     const getLessonPrimaryActionLabel = () => {
         if (!activeLesson) return 'Cap nhat';
         const lessonType = normalizeLessonType(activeLesson.lessonType);
@@ -395,7 +373,7 @@ const DetailCourse = () => {
         if (isLessonCompleted(activeLesson._id)) return 'Da hoan thanh';
         return 'Hoan thanh';
     };
-
+    // cham diem quiz, hien ket qua va cap nhat tien do neu dat.
     const submitQuiz = async () => {
         if (!activeLesson) return;
 
@@ -432,7 +410,7 @@ const DetailCourse = () => {
             toast.info('Chua dat diem qua. Thu lai nhe.');
         }
     };
-
+    // gui bai assignment len backend va dong bo tien do moi.
     const submitAssignment = async () => {
         if (!activeLesson) return;
 
@@ -465,9 +443,9 @@ const DetailCourse = () => {
             setSubmittingAssignment(false);
         }
     };
-
+    // kiem tra lesson da nam trong danh sach hoan thanh hay chua.
     const isLessonCompleted = (lessonId) => completedLessonIds.has(String(lessonId || ''));
-
+    // lay bai nop assignment da luu theo lesson id.
     const getAssignmentSubmission = (lessonId) => assignmentSubmissionMap.get(String(lessonId || ''));
 
     return (

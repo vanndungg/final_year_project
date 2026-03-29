@@ -1,5 +1,8 @@
+
+
 const mongoose = require('mongoose');
 
+// dinh nghia schema nguoi dung.
 const UserSchema = new mongoose.Schema({
     name: { 
         type: String, 
@@ -20,16 +23,17 @@ const UserSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    // luu vai tro nguoi dung.
     role: { 
-        type: Number, // ✅ Bắt buộc phải là Number
+        type: Number,
         default: 0
     },
-    // 🛒 Giỏ hàng: Lưu các khóa học người dùng định mua nhưng chưa thanh toán
+    // luu danh sach khoa hoc trong gio hang.
     cart: {
         type: Array,
         default: []
     },
-    // 🎓 Khóa học đã sở hữu: Sau khi bấm "Thanh toán" hoặc "Enroll"
+    // luu danh sach khoa hoc da so huu.
     enrolledCourses: [{ 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'Course' 
@@ -38,4 +42,5 @@ const UserSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// tao model User.
 module.exports = mongoose.model('User', UserSchema);

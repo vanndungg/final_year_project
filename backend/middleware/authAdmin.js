@@ -1,5 +1,7 @@
-const Users = require('../models/User');
 
+
+const Users = require('../models/User');
+// kiem tra quyen admin.
 const authAdmin = async (req, res, next) => {
     try {
         const user = await Users.findOne({ _id: req.user.id });

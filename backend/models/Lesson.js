@@ -1,3 +1,5 @@
+
+
 const mongoose = require('mongoose');
 
 const LESSON_TYPES = ['video', 'document', 'quiz', 'assignment'];
@@ -21,6 +23,7 @@ const quizQuestionSchema = new mongoose.Schema({
     }
 }, { _id: false });
 
+// dinh nghia schema bai hoc.
 const lessonSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -37,14 +40,11 @@ const lessonSchema = new mongoose.Schema({
         default: 'video',
         required: true
     },
-    // Trường dùng để lưu ID video (Ví dụ: YouTube ID như 'RGKi6LSPDLU')
     video_id: {
         type: String,
         required: false,
         default: ''
     },
-    // videoUrl bây giờ sẽ không bắt buộc (required: false) 
-    // để tránh lỗi khi bạn chỉ có video_id
     videoUrl: {
         type: String,
         required: false,
@@ -58,7 +58,6 @@ const lessonSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
-    // Nội dung bổ sung cho tài liệu/bai tap (url hoặc text)
     content: {
         type: String,
         default: ''
@@ -244,6 +243,7 @@ lessonSchema.pre('validate', function normalizeLesson(next) {
     }
 });
 
+// tao model Lesson.
 const LessonModel = mongoose.model('Lesson', lessonSchema);
 
 module.exports = LessonModel;

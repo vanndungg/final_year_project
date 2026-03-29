@@ -1,7 +1,10 @@
+
+
 const Reviews = require('../models/Review');
 const Users = require('../models/User');
 
 const reviewCtrl = {
+// tao du lieu moi hoac bo sung du lieu.
     createReview: async (req, res) => {
         try {
             const { courseId, rating, comment } = req.body;
@@ -33,6 +36,7 @@ const reviewCtrl = {
             return res.status(500).json({ msg: err.message });
         }
     },
+// lay du lieu phuc vu API hoac giao dien.
     getCourseReviews: async (req, res) => {
         try {
             // req.params.id ở đây chính là Course ID

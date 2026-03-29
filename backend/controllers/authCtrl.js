@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const authCtrl = {
+// tao du lieu moi.
     register: async (req, res) => {
         try {
             const { name, email, password } = req.body;
@@ -32,6 +33,7 @@ const authCtrl = {
             return res.status(500).json({ msg: err.message });
         }
     },
+// xu ly phien dang nhap cua nguoi dung.
     login: async (req, res) => {
         try {
             const { email, password } = req.body;

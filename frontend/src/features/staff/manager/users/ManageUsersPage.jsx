@@ -1,10 +1,12 @@
+
+
 import React, { useState, useEffect, useContext } from 'react';
 import { GlobalState } from '../../../../app/providers/GlobalState';
 import axiosClient from '../../../../shared/api/axiosClient';
 import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom';
 import AdminPanelLayout from '../../pages/AdminPanelLayout';
-
+// hien thi danh sach user va cho phep admin doi role.
 const ManageUsers = () => {
     const state = useContext(GlobalState);
     const [token = ''] = state?.token || [''];
@@ -15,7 +17,6 @@ const ManageUsers = () => {
     const [roleFilter, setRoleFilter] = useState('All Roles');
     const [statusFilter, setStatusFilter] = useState('All Status');
 
-    // Cấu trúc Role dựa trên Number
     const ROLES = [
         { value: 0, label: "Học viên", color: "bg-gray-100 text-gray-500" },
         { value: 1, label: "Admin", color: "bg-purple-100 text-purple-600 border-purple-200" },
@@ -23,11 +24,11 @@ const ManageUsers = () => {
     ];
 
     useEffect(() => {
+        // tai danh sach user de quan ly tren admin panel.
         const getUsers = async () => {
             setLoading(true);
             try {
                 const res = await axiosClient.get('/users/all_info');
-                // Backend của bạn trả về mảng users trực tiếp: res.json(users)
                 setUsers(res.data);
             } catch (err) {
                 toast.error(err.response?.data?.msg || "Lỗi tải dữ liệu");
@@ -36,7 +37,7 @@ const ManageUsers = () => {
         };
         if(token) getUsers();
     }, [token, callback]);
-
+    // cap nhat role cua user duoc chon.
     const handleRoleChange = async (userId, newRole) => {
         const roleNum = Number(newRole);
         if (window.confirm(`Xác nhận thay đổi quyền hạn?`)) {
@@ -50,9 +51,8 @@ const ManageUsers = () => {
         }
     };
 
-    // Calculate stats
     const totalUsers = users.length;
-    const activeUsers = users.filter(user => user.role === 0).length; // Assuming role 0 is student
+    const activeUsers = users.filter(user => user.role === 0).length;
     const newUsers = users.filter(user => {
         const joinedDate = new Date(user.createdAt);
         const oneMonthAgo = new Date();
@@ -61,7 +61,6 @@ const ManageUsers = () => {
     }).length;
     const adminUsers = users.filter(user => user.role === 1).length;
 
-    // Filter users based on search and filters
     const filteredUsers = users.filter(user => {
         const userName = user?.name?.toLowerCase() || '';
         const userEmail = user?.email?.toLowerCase() || '';
@@ -72,15 +71,14 @@ const ManageUsers = () => {
                            (roleFilter === 'Admin' && user.role === 1) ||
                            (roleFilter === 'Teacher' && user.role === 2);
         const matchesStatus = statusFilter === 'All Status' || 
-                             (statusFilter === 'Active' && user.role !== undefined) || // Assuming all users are active
-                             (statusFilter === 'Inactive' && false); // No inactive logic yet
+                             (statusFilter === 'Active' && user.role !== undefined) ||
+                             (statusFilter === 'Inactive' && false);
         return matchesSearch && matchesRole && matchesStatus;
     });
 
     return (
         <AdminPanelLayout>
             <div className="p-8 space-y-8">
-                    {/* Title and Action */}
                     <div className="flex items-center justify-between">
                         <div>
                             <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Student Management</h2>
@@ -91,7 +89,6 @@ const ManageUsers = () => {
                             Add New User
                         </Link>
                     </div>
-                    {/* Stats Summary */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                             <div className="flex items-center justify-between mb-4">
@@ -134,7 +131,6 @@ const ManageUsers = () => {
                             <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{adminUsers}</p>
                         </div>
                     </div>
-                    {/* Search and Filter Bar */}
                     <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-wrap gap-4 items-center">
                         <div className="flex-1 min-w-[300px] relative">
                             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
@@ -170,7 +166,6 @@ const ManageUsers = () => {
                             More Filters
                         </button>
                     </div>
-                    {/* Users Table */}
                     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
@@ -244,7 +239,6 @@ const ManageUsers = () => {
                                 </tbody>
                             </table>
                         </div>
-                        {/* Pagination */}
                         <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border-t border-slate-200 dark:border-slate-800">
                             <p className="text-sm text-slate-500 dark:text-slate-400">Showing <span className="font-bold text-slate-900 dark:text-white">1</span> to <span className="font-bold text-slate-900 dark:text-white">{filteredUsers.length}</span> of <span className="font-bold text-slate-900 dark:text-white">{totalUsers}</span> users</p>
                             <div className="flex items-center gap-2">

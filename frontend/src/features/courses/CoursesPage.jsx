@@ -1,8 +1,10 @@
+
+
 import React, { useContext, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { GlobalState } from '../../app/providers/GlobalState';
 import { getStudentCount } from '../../shared/utils/courseDataUtils';
-
+// hien thi danh sach khoa hoc, tim kiem, sap xep va phan trang.
 const Courses = () => {
     const { coursesAPI } = useContext(GlobalState);
     const { userAPI } = useContext(GlobalState);
@@ -13,17 +15,17 @@ const Courses = () => {
     const coursesPerPage = 12;
     const searchTerm = searchParams.get('q') || '';
 
-    // States for filters
+    // luu tuy chon sap xep hien tai.
     const [sortBy, setSortBy] = useState('price-low');
 
-    // Available options
+    // khai bao cac lua chon sap xep khoa hoc.
     const sortOptions = [
         { value: 'price-low', label: 'Giá: Thấp đến Cao' },
         { value: 'price-high', label: 'Giá: Cao đến Thấp' },
         { value: 'rating', label: 'Đánh giá Cao nhất' }
     ];
 
-    // Filter and sort courses
+    // luu danh sach khoa hoc ma user da so huu.
     const enrolledCourseIds = new Set(
         (user?.enrolledCourses || []).map((item) => String(item?._id || item))
     );
@@ -58,7 +60,7 @@ const Courses = () => {
 
     const myCourseCount = filteredCourses.filter((course) => enrolledCourseIds.has(String(course?._id || ''))).length;
 
-    // Tính toán khóa học hiển thị trên trang hiện tại
+    // tinh du lieu phan trang cho danh sach khoa hoc dang hien thi.
     const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
     const safeCurrentPage = Math.min(currentPage, Math.max(totalPages, 1));
     const indexOfLastCourse = safeCurrentPage * coursesPerPage;
@@ -67,9 +69,9 @@ const Courses = () => {
     const currentOwnedCourses = currentCourses.filter((course) => enrolledCourseIds.has(String(course?._id || '')));
     const currentDiscoverCourses = currentCourses.filter((course) => !enrolledCourseIds.has(String(course?._id || '')));
 
-    // Hàm chuyển trang
+    // doi trang hien tai cua danh sach khoa hoc.
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
+    // cap nhat tu khoa tim kiem len url va reset ve trang dau.
     const handleSearchChange = (value) => {
         setCurrentPage(1);
 
@@ -85,7 +87,7 @@ const Courses = () => {
         setSearchParams(nextParams, { replace: true });
     };
 
-    // Clear search
+    // xoa tim kiem va dua bo loc ve gia tri mac dinh.
     const clearSearch = () => {
         handleSearchChange('');
         setSortBy('price-low');
@@ -94,7 +96,6 @@ const Courses = () => {
 
     return (
         <div className="relative flex min-h-screen flex-col">
-            {/* Hero Banner */}
             <section className="bg-primary/5 dark:bg-primary/10 py-10 border-b border-slate-200 dark:border-slate-800">
                 <div className="container mx-auto px-4">
                     <nav aria-label="Breadcrumb" className="flex mb-4 text-xs font-medium text-slate-500">
@@ -111,9 +112,7 @@ const Courses = () => {
                 </div>
             </section>
             <main className="container mx-auto px-4 py-8">
-                {/* Main Grid */}
                 <div className="w-full">
-                    {/* Search and Sorting Bar */}
                     <div className="mb-6 pb-4 border-b border-slate-200 dark:border-slate-800 space-y-4">
                         <div className="flex items-center gap-4">
                             <div className="flex-1 max-w-md">

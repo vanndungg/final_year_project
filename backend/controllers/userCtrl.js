@@ -1,10 +1,10 @@
 const Users = require('../models/User');
 const Courses = require('../models/Course');
-const Payments = require('../models/Payment'); // Cần tạo model này
+const Payments = require('../models/Payment'); 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-
+// tong hop thong ke hoc vien va doanh thu theo khoa hoc.
 const buildCoursePerformanceMetrics = async () => {
     const [users, courses] = await Promise.all([
         Users.find().select('enrolledCourses').lean(),
@@ -35,11 +35,13 @@ const buildCoursePerformanceMetrics = async () => {
     return { studentsByCourse, revenueByCourse, totalRevenue };
 };
 
+// tao ma thanh toan de doi soat giao dich.
 const generatePaymentCode = () => {
     const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
     return `EDU${Date.now().toString().slice(-8)}${randomPart}`;
 };
 
+// sap xep va noi query de ky chu ky VNPAY.
 const buildSortedQuery = (params) => {
     const sortedKeys = Object.keys(params).sort();
     return sortedKeys
@@ -47,6 +49,7 @@ const buildSortedQuery = (params) => {
         .join('&');
 };
 
+// tao payment URL cua VNPAY.
 const buildVnpayPaymentUrl = ({ payment, ipAddr, backendBaseUrl }) => {
     const tmnCode = String(process.env.VNP_TMNCODE || '').trim();
     const hashSecret = String(process.env.VNP_HASHSECRET || '').trim();
@@ -91,6 +94,7 @@ const buildVnpayPaymentUrl = ({ payment, ipAddr, backendBaseUrl }) => {
     return `${vnpUrl}?${signData}&vnp_SecureHash=${secureHash}`;
 };
 
+// hoan tat don thanh toan va cap quyen hoc.
 const fulfillPaymentOrder = async (paymentDoc) => {
     if (!paymentDoc || paymentDoc.isFulfilled) return;
 
@@ -117,7 +121,7 @@ const fulfillPaymentOrder = async (paymentDoc) => {
 };
 
 const userCtrl = {
-    // 1. Đăng ký tài khoản
+    // tao tai khoan moi.
     register: async (req, res) => {
         try {
             const { name, email, password } = req.body;
@@ -148,7 +152,7 @@ const userCtrl = {
         }
     },
 
-    // 2. Đăng nhập
+    // dang nhap va tra token.
     login: async (req, res) => {
         try {
             const { email, password } = req.body;
@@ -177,7 +181,7 @@ const userCtrl = {
         }
     },
 
-    // 3. Đăng xuất
+    // dang xuat phien hien tai.
     logout: async (req, res) => {
         try {
             return res.json({ msg: "Đã đăng xuất." });
@@ -186,7 +190,7 @@ const userCtrl = {
         }
     },
 
-    // 4. Lấy thông tin cá nhân
+    // lay thong tin nguoi dung hien tai.
     getUser: async (req, res) => {
         try {
             const user = await Users.findById(req.user.id)
@@ -200,6 +204,7 @@ const userCtrl = {
         }
     },
 
+    // cap nhat avatar nguoi dung.
     updateAvatar: async (req, res) => {
         try {
             const avatar = String(req.body?.avatar || '').trim();
@@ -233,7 +238,7 @@ const userCtrl = {
         }
     },
 
-    // 5. Quản lý Giỏ hàng
+    // cap nhat gio hang cua nguoi dung.
     addCart: async (req, res) => {
         try {
             const { cart } = req.body;
@@ -245,7 +250,7 @@ const userCtrl = {
         }
     },
 
-    // 6. Thanh toán (Đã bổ sung lưu Payment)
+    // thanh toan truc tiep (legacy).
     checkout: async (req, res) => {
         try {
             const user = await Users.findById(req.user.id);
@@ -307,6 +312,7 @@ const userCtrl = {
         }
     },
 
+    // tao don thanh toan VNPAY dang pending.
     createVnpayOrder: async (req, res) => {
         try {
             const user = await Users.findById(req.user.id).select('name email cart enrolledCourses');
@@ -366,6 +372,7 @@ const userCtrl = {
         }
     },
 
+    // tao URL thanh toan VNPAY.
     getVnpayPaymentUrl: async (req, res) => {
         try {
             const payment = await Payments.findOne({
@@ -401,6 +408,7 @@ const userCtrl = {
         }
     },
 
+    // lay trang thai giao dich VNPAY.
     getVnpayPaymentStatus: async (req, res) => {
         try {
             const payment = await Payments.findOne({
@@ -441,12 +449,7 @@ const userCtrl = {
         }
     },
 
-    // Backward-compat aliases during payment gateway migration
-    createSepayOrder: async (req, res) => userCtrl.createVnpayOrder(req, res),
-    getSepayCheckoutForm: async (req, res) => userCtrl.getVnpayPaymentUrl(req, res),
-    getSepayPaymentStatus: async (req, res) => userCtrl.getVnpayPaymentStatus(req, res),
-
-    // 7. Đăng ký khóa học nhanh (Free hoặc Quick Enroll)
+    // dang ky nhanh khoa hoc.
     enrollCourse: async (req, res) => {
         try {
             const { courseId } = req.body;
@@ -469,7 +472,7 @@ const userCtrl = {
         }
     },
 
-    // 8. Admin: Lấy danh sách tất cả người dùng
+    // admin lay danh sach nguoi dung.
     getUsersAllInfor: async (req, res) => {
         try {
             const users = await Users.find().select('-password');
@@ -479,7 +482,7 @@ const userCtrl = {
         }
     },
 
-    // 9. Admin: Cập nhật quyền (Role)
+    // admin cap nhat role nguoi dung.
     updateRole: async (req, res) => {
         try {
             const { role } = req.body;
@@ -500,7 +503,7 @@ const userCtrl = {
         }
     },
 
-    // 10. Lấy danh sách khóa học đã đăng ký
+    // lay danh sach khoa hoc da dang ky.
     getEnrolledCourses: async (req, res) => {
         try {
             const user = await Users.findById(req.user.id).populate('enrolledCourses');
@@ -511,7 +514,7 @@ const userCtrl = {
         }
     },
 
-    // 11. Admin: Thống kê Dashboard (Mới)
+    // admin lay thong ke tong quan.
     getAdminStats: async (req, res) => {
         try {
             const [totalStudents, metrics] = await Promise.all([
@@ -528,7 +531,7 @@ const userCtrl = {
         }
     },
 
-    // 12. Admin: Thong ke hoc vien/doanh thu theo tung khoa hoc
+    // admin lay thong ke theo tung khoa hoc.
     getCoursePerformanceStats: async (req, res) => {
         try {
             const { studentsByCourse, revenueByCourse } = await buildCoursePerformanceMetrics();
@@ -539,7 +542,7 @@ const userCtrl = {
         }
     },
 
-    // 13. Admin: Danh sach giao dich thanh cong
+    // admin lay danh sach giao dich thanh cong.
     getSuccessfulPayments: async (req, res) => {
         try {
             const payments = await Payments.find({ status: 'paid' })
@@ -575,6 +578,7 @@ const userCtrl = {
     }
 };
 
+// tao access token cho nguoi dung.
 const createAccessToken = (user) => {
     return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET || 'secret123', { expiresIn: '1d' });
 };

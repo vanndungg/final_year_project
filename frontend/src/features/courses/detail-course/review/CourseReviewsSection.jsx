@@ -1,3 +1,5 @@
+
+
 import React from 'react';
 import {
     filledStarStyle,
@@ -7,7 +9,7 @@ import {
     outlineStarStyle,
     renderRatingStars
 } from './ReviewUtils.jsx';
-
+// hien thi tong quan danh gia, form review va danh sach nhan xet cua khoa hoc.
 const CourseReviewsSection = ({
     averageRating,
     reviewCount,

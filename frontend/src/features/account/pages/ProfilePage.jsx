@@ -1,3 +1,5 @@
+
+
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -5,7 +7,7 @@ import { GlobalState } from '../../../app/providers/GlobalState';
 import axiosClient from '../../../shared/api/axiosClient';
 import { formatPercent, getCourseImage } from '../profileUtils';
 import useProfileProgress from '../useProfileProgress';
-
+// hien thi thong tin ca nhan, avatar va tien do hoc tap cua user.
 const Profile = () => {
     const state = useContext(GlobalState);
     const [token = ''] = state?.token || [''];
@@ -27,7 +29,7 @@ const Profile = () => {
     useEffect(() => {
         setAvatarPreview(user?.avatar || '');
     }, [user?.avatar]);
-
+    // cap nhat avatar cua user len backend.
     const updateAvatar = async (nextAvatar) => {
         if (!token) return;
 
@@ -50,11 +52,11 @@ const Profile = () => {
             setSavingAvatar(false);
         }
     };
-
+    // mo hop chon file anh moi.
     const handleChooseAvatar = () => {
         fileInputRef.current?.click();
     };
-
+    // doc file anh nguoi dung vua chon va gui len backend.
     const handleAvatarFileChange = (event) => {
         const file = event.target.files?.[0];
         event.target.value = '';

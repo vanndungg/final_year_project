@@ -1,5 +1,8 @@
+
+
 const mongoose = require('mongoose');
 
+// dinh nghia schema danh gia khoa hoc.
 const reviewSchema = new mongoose.Schema({
     courseId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -25,4 +28,5 @@ const reviewSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// tao model Review.
 module.exports = mongoose.model('Review', reviewSchema);

@@ -1,8 +1,10 @@
+
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosClient from '../../../shared/api/axiosClient';
 import { toast } from 'react-toastify';
-
+// hien thi form dang ky va gui thong tin tao tai khoan moi.
 function Register() {
     const [user, setUser] = useState({ name: '', email: '', password: '', cf_password: '' });
     const navigate = useNavigate();
@@ -15,12 +17,12 @@ function Register() {
     const registerSubmit = async e => {
         e.preventDefault();
         try {
-            // Kiểm tra khớp mật khẩu ở phía Frontend trước cho nhanh
+            // kiem tra mat khau xac nhan truoc khi goi api.
             if (user.password !== user.cf_password) {
                 return toast.error("Mật khẩu xác nhận không khớp!");
             }
 
-            // Gọi API đăng ký
+            // gui thong tin dang ky len backend.
             await axiosClient.post('/register', { 
                 name: user.name, 
                 email: user.email, 
@@ -29,7 +31,7 @@ function Register() {
 
             toast.success("Đăng ký tài khoản thành công! 🎉");
             
-            // Chuyển sang trang Login sau khi đăng ký xong
+            // chuyen sang trang dang nhap sau khi dang ky xong.
             navigate('/login');
         } catch (err) {
             toast.error(err.response?.data?.msg || "Đăng ký thất bại");

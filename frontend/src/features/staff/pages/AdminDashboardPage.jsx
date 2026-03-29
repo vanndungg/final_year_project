@@ -1,12 +1,14 @@
+
+
 import React, { useContext, useEffect, useState } from 'react';
 import { GlobalState } from '../../../app/providers/GlobalState';
 import axiosClient from '../../../shared/api/axiosClient';
 import { Link } from 'react-router-dom';
 import AdminPanelLayout from './AdminPanelLayout';
 import { getStudentCount } from '../../../shared/utils/courseDataUtils';
-
+// dinh dang doanh thu de hien thi tren dashboard.
 const formatRevenue = (value) => `${Number(value || 0).toLocaleString()}đ`;
-
+// hien thi tong quan so lieu cua khu vuc admin.
 const AdminDashboard = () => {
     const state = useContext(GlobalState);
     const [courses = []] = state?.coursesAPI?.courses || [[]];
@@ -26,7 +28,7 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         let isMounted = true;
-
+        // tai so lesson cua cac khoa hoc gan day.
         const getRecentCourseLessons = async () => {
             if (!Array.isArray(courses) || courses.length === 0) {
                 if (isMounted) setLessonCountByCourse({});
@@ -60,9 +62,9 @@ const AdminDashboard = () => {
     }, [courses]);
 
     useEffect(() => {
+        // tai thong ke tong hoc vien va doanh thu.
         const getStats = async () => {
             try {
-                // Gọi API lấy số lượng học viên và doanh thu
                 const res = await axiosClient.get('/users/admin_stats', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -78,6 +80,7 @@ const AdminDashboard = () => {
     }, [token]);
 
     useEffect(() => {
+        // tai thong ke hoc vien va doanh thu theo tung khoa hoc.
         const getCourseMetrics = async () => {
             if (!token) return;
 
@@ -103,7 +106,7 @@ const AdminDashboard = () => {
         : '0.0';
 
     const recentCourses = courses.slice(0, 6);
-
+    // lay so hoc vien thuc te cua khoa hoc tu metrics hoac fallback.
     const getActualStudentCount = (course) => {
         const courseId = String(course?._id || '');
         const studentsFromMetrics = courseMetrics.studentsByCourse?.[courseId];
@@ -113,7 +116,7 @@ const AdminDashboard = () => {
 
         return getStudentCount(course);
     };
-
+    // lay doanh thu cua khoa hoc tu du lieu thong ke.
     const getCourseRevenue = (course) => {
         const courseId = String(course?._id || '');
         const revenueFromMetrics = courseMetrics.revenueByCourse?.[courseId];
@@ -129,7 +132,6 @@ const AdminDashboard = () => {
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard Overview</h2>
                     <p className="text-slate-500">Welcome back, {accountName}. Here's a summary of your platform's performance.</p>
                 </div>
-                    {/* Summary Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                             <div className="flex items-center justify-between mb-4">
@@ -172,7 +174,6 @@ const AdminDashboard = () => {
                             <h3 className="text-2xl font-bold mt-1">{loading ? '...' : `${Number(dataStats.revenue || 0).toLocaleString()}đ`}</h3>
                         </div>
                     </div>
-                    {/* Table Section */}
                     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                         <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                             <h4 className="text-lg font-bold">Recent Course Performance</h4>

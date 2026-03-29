@@ -1,3 +1,5 @@
+
+
 const mongoose = require('mongoose');
 const path = require('path');
 const bcrypt = require('bcrypt');
@@ -61,9 +63,9 @@ const QUIZ_QUESTION_BANK = [
         correctOptionIndex: 0
     }
 ];
-
+// tra ve so ngau nhien trong khoang min den max.
 const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-
+// tron mang ngau nhien theo thuat toan Fisher-Yates.
 const shuffle = (arr) => {
     const cloned = [...arr];
     for (let i = cloned.length - 1; i > 0; i -= 1) {
@@ -72,7 +74,7 @@ const shuffle = (arr) => {
     }
     return cloned;
 };
-
+// tao danh sach cau hoi quiz ngau nhien cho lesson.
 const buildQuizQuestions = () => {
     const questions = shuffle(QUIZ_QUESTION_BANK).slice(0, randomInt(2, 3));
     return questions.map((item) => ({
@@ -81,7 +83,7 @@ const buildQuizQuestions = () => {
         correctOptionIndex: item.correctOptionIndex
     }));
 };
-
+// tao du lieu lesson theo tung loai noi dung.
 const buildLessonPayload = (course, lessonIndex) => {
     const lessonType = LESSON_TYPE_SEQUENCE[lessonIndex - 1] || 'video';
 
@@ -140,7 +142,7 @@ const buildLessonPayload = (course, lessonIndex) => {
         allowLateSubmission: false
     };
 };
-
+// tao du lieu payment da thanh toan cho hoc vien va khoa hoc.
 const buildPaymentPayload = ({ student, course }) => {
     const createdAt = new Date(Date.now() - randomInt(1, 20) * 24 * 60 * 60 * 1000);
     const total = Number(course.price || 0);
@@ -165,7 +167,7 @@ const buildPaymentPayload = ({ student, course }) => {
         updatedAt: createdAt
     };
 };
-
+// reset database va seed du lieu mau cho he thong.
 const seedData = async () => {
     let connected = false;
 

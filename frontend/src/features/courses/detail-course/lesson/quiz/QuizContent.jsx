@@ -1,5 +1,7 @@
-import React from 'react';
 
+
+import React from 'react';
+// hien thi cau hoi quiz, dap an da chon va ket qua cham diem.
 const QuizLessonContent = ({ activeLesson, quizAnswers, setQuizAnswers, quizResult }) => {
     if (!activeLesson) return null;
 

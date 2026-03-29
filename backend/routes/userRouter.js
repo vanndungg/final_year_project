@@ -1,3 +1,5 @@
+
+
 const router = require('express').Router();
 const userCtrl = require('../controllers/userCtrl');
 const auth = require('../middleware/auth');
@@ -52,7 +54,6 @@ router.patch('/enroll', auth, userCtrl.enrollCourse);
 
 // 5. Lấy danh sách khóa học cá nhân
 router.get('/enrolled_courses', auth, userCtrl.getEnrolledCourses);
-
 
 // --- 🆕 ROUTES DÀNH CHO ADMIN (Thêm mới) ---
 

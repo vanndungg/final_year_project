@@ -1,6 +1,9 @@
+
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+// hien thi footer chung voi link dieu huong va form nhan tin.
 export default function Footer() {
   return (
     <footer className="bg-white dark:bg-background-dark border-t border-slate-200 dark:border-slate-800 pt-16 pb-8">

@@ -1,3 +1,5 @@
+
+
 import React, { useRef, useState, useEffect, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { GlobalState } from '../../../../app/providers/GlobalState';
@@ -11,7 +13,7 @@ import {
     normalizePricingType,
     normalizeStatus
 } from './courseFormUtils';
-
+// hien thi form tao hoac sua khoa hoc.
 const CreateCourse = () => {
     const state = useContext(GlobalState);
     const [course, setCourse] = useState(initialCourseState);
@@ -29,7 +31,7 @@ const CreateCourse = () => {
 
     useEffect(() => {
         if (!onEdit) return;
-
+        // tai du lieu khoa hoc cu khi vao che do chinh sua.
         const getCourseDetail = async () => {
             try {
                 const res = await axiosClient.get(`/courses/${param.id}`);
@@ -63,7 +65,7 @@ const CreateCourse = () => {
         const { name, value } = e.target;
         setCourse((prevCourse) => ({ ...prevCourse, [name]: value }));
     };
-
+    // doi pricing type va dong bo lai gia tri gia tien.
     const handlePricingTypeChange = (pricingTypeValue) => {
         setCourse((prevCourse) => ({
             ...prevCourse,
@@ -71,7 +73,7 @@ const CreateCourse = () => {
             price: pricingTypeValue === 'free' ? 0 : Number(prevCourse.price || 0)
         }));
     };
-
+    // doc file anh va luu duoi dang base64 de preview/gui len backend.
     const handleImageUpload = (event) => {
         const selectedFile = event.target.files?.[0];
         if (!selectedFile) return;
@@ -91,7 +93,7 @@ const CreateCourse = () => {
 
         reader.readAsDataURL(selectedFile);
     };
-
+    // kiem tra du lieu khoa hoc truoc khi luu.
     const validateForm = () => {
         if (!String(course.title || '').trim()) return 'Vui lòng nhập tên khóa học.';
         if (!String(course.category || '').trim()) return 'Vui lòng chọn category.';
@@ -104,7 +106,7 @@ const CreateCourse = () => {
 
         return null;
     };
-
+    // tao payload khoa hoc theo trang thai can luu.
     const buildPayload = (targetStatus) => {
         return {
             title: String(course.title || '').trim(),
@@ -118,7 +120,7 @@ const CreateCourse = () => {
             level: course.level
         };
     };
-
+    // gui request tao hoac cap nhat khoa hoc.
     const submitCourse = async ({ targetStatus, redirectAfterSave }) => {
         if (saving) return;
 

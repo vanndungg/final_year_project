@@ -1,5 +1,7 @@
-import React from 'react';
 
+
+import React from 'react';
+// hien thi de bai va o nhap cau tra loi cho assignment.
 const AssignmentLessonContent = ({ activeLesson, assignmentAnswer, setAssignmentAnswer }) => {
     if (!activeLesson) return null;
 

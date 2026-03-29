@@ -1,30 +1,17 @@
+
+
 import axios from 'axios';
-
-/*
-    ==================== BƯỚC 3: API CLIENT ====================
-    Đây là HTTP client dùng chung cho toàn bộ frontend.
-
-    Vì sao người mới cần hiểu file này:
-    - Mọi page đều gọi API theo cùng một kiểu.
-    - Token được tự động gắn vào request tại đây.
-    - Lỗi API được xử lý tập trung tại đây.
-
-    Ví dụ:
-    Khi page gọi axiosClient.get('/courses')
-    URL thực tế sẽ là: http://localhost:5000/api/courses
-    ========================================================
-*/
+// tao axios client dung chung cho toan bo frontend.
 
 const axiosClient = axios.create({
-    baseURL: 'http://localhost:5000/api', // Cổng 5000 của Backend
+    baseURL: 'http://localhost:5000/api',
     headers: {
         'Content-Type': 'application/json'
     },
-    // Chờ tối đa 10 giây, nếu lâu hơn sẽ báo lỗi Timeout
     timeout: 10000 
 });
 
-// 1. INTERCEPTOR CHO REQUEST: Gửi Token đi
+// gan token vao moi request neu localStorage dang co access token.
 axiosClient.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('access_token');
@@ -38,31 +25,23 @@ axiosClient.interceptors.request.use(
     }
 );
 
-// 2. INTERCEPTOR CHO RESPONSE: Nhận phản hồi và xử lý lỗi tập trung
+// xu ly loi api tap trung va reset phien dang nhap neu token het han.
 axiosClient.interceptors.response.use(
     (response) => {
-        // Nếu API thành công, trả về dữ liệu ngay
         return response;
     },
     (error) => {
-        // Kiểm tra nếu Server có phản hồi lỗi (ví dụ 400, 401, 404, 500)
         if (error.response) {
             const { status, data } = error.response;
 
-            // Xử lý lỗi Token hết hạn hoặc không hợp lệ (401 hoặc 403)
             if (status === 401 || status === 403) {
                 console.error("Token không hợp lệ hoặc hết hạn. Đang đăng xuất...");
                 localStorage.removeItem('firstLogin');
                 localStorage.removeItem('access_token');
-                
-                // Tùy chọn: Chuyển hướng về trang login nếu cần
-                // window.location.href = '/login'; 
             }
 
-            // In lỗi chi tiết từ Backend ra Console để bạn dễ debug
             console.error(`[API Error ${status}]:`, data.msg || data);
         } else if (error.request) {
-            // Lỗi do không kết nối được tới Server (Server chưa bật)
             console.error("[Network Error]: Không thể kết nối tới Server. Hãy kiểm tra Backend!");
         } else {
             console.error("[Error]:", error.message);

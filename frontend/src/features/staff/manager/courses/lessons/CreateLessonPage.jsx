@@ -1,3 +1,5 @@
+
+
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -12,23 +14,7 @@ import {
     normalizeLessonType,
     toNumber
 } from './lessonAdminUtils';
-
-/*
-    ==================== BƯỚC 5: LUỒNG TẠO/SỬA LESSON CỦA GIÁO VIÊN/ADMIN ====================
-    File này dùng để tạo lesson mới hoặc sửa lesson cũ.
-
-    Hãy đọc theo đúng thứ tự này:
-    1) Constants và giá trị mặc định (lesson có cấu trúc gì)
-    2) useEffect(onEdit) -> nếu là edit thì tải lesson cũ lên
-    3) validateLesson() -> kiểm tra dữ liệu nào là bắt buộc
-    4) buildPayload() -> dữ liệu chính xác gửi sang backend là gì
-    5) submitLesson() -> gọi API POST/PUT và điều hướng sau khi lưu
-
-    Mẹo cho người mới:
-    Nếu Save/Publish bị lỗi, hãy đọc validateLesson + buildPayload trước tiên.
-    ==========================================================================================
-*/
-
+// hien thi form tao hoac sua lesson cho khoa hoc.
 const CreateLesson = () => {
     const { courseId, lessonId } = useParams();
     const navigate = useNavigate();
@@ -49,7 +35,7 @@ const CreateLesson = () => {
         }
 
         let mounted = true;
-
+        // tai du lieu lesson cu khi vao che do chinh sua.
         const fetchLesson = async () => {
             setLoading(true);
             try {
@@ -115,11 +101,11 @@ const CreateLesson = () => {
         ];
         return Math.round((checks.filter(Boolean).length / checks.length) * 100);
     }, [lesson]);
-
+    // cap nhat mot field don le trong form lesson.
     const handleChange = (field, value) => {
         setLesson((prev) => ({ ...prev, [field]: value }));
     };
-
+    // doi loai lesson va reset cac field lien quan.
     const handleLessonTypeChange = (value) => {
         const nextType = normalizeLessonType(value);
         setLesson((prev) => ({
@@ -131,7 +117,7 @@ const CreateLesson = () => {
             resourceName: nextType === 'document' ? prev.resourceName : ''
         }));
     };
-
+    // doc file pdf va luu du lieu vao form lesson.
     const handleDocumentUpload = (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -154,14 +140,14 @@ const CreateLesson = () => {
         };
         reader.readAsDataURL(file);
     };
-
+    // cap nhat noi dung cua mot cau hoi quiz.
     const updateQuestion = (qIndex, field, value) => {
         setLesson((prev) => ({
             ...prev,
             quizQuestions: prev.quizQuestions.map((question, index) => index === qIndex ? { ...question, [field]: value } : question)
         }));
     };
-
+    // cap nhat mot dap an trong cau hoi quiz.
     const updateQuestionOption = (qIndex, optionIndex, value) => {
         setLesson((prev) => ({
             ...prev,
@@ -172,7 +158,7 @@ const CreateLesson = () => {
             })
         }));
     };
-
+    // them mot cau hoi moi vao quiz.
     const addQuestion = () => {
         setLesson((prev) => {
             const nextQuestions = [...prev.quizQuestions, createEmptyQuestion()];
@@ -183,7 +169,7 @@ const CreateLesson = () => {
             };
         });
     };
-
+    // xoa mot cau hoi quiz khoi form.
     const removeQuestion = (qIndex) => {
         setLesson((prev) => {
             if (prev.quizQuestions.length <= 1) {
@@ -199,7 +185,7 @@ const CreateLesson = () => {
             };
         });
     };
-
+    // them mot dap an moi cho cau hoi quiz.
     const addOption = (qIndex) => {
         setLesson((prev) => ({
             ...prev,
@@ -208,7 +194,7 @@ const CreateLesson = () => {
             )
         }));
     };
-
+    // xoa mot dap an khoi cau hoi quiz.
     const removeOption = (qIndex, optionIndex) => {
         setLesson((prev) => ({
             ...prev,
@@ -224,7 +210,7 @@ const CreateLesson = () => {
             })
         }));
     };
-
+    // kiem tra du lieu lesson truoc khi luu.
     const validateLesson = () => {
         if (!lesson.title.trim()) return 'Vui lòng nhập tiêu đề bài học.';
         if (!lesson.description.trim()) return 'Vui lòng nhập mô tả bài học.';
@@ -257,7 +243,7 @@ const CreateLesson = () => {
 
         return null;
     };
-
+    // tao payload lesson theo trang thai can luu.
     const buildPayload = (targetStatus) => {
         const quizQuestions = lesson.lessonType === 'quiz'
             ? lesson.quizQuestions
@@ -292,7 +278,7 @@ const CreateLesson = () => {
             courseId: String(lesson.courseId || courseId || '').trim()
         };
     };
-
+    // gui request tao hoac cap nhat lesson.
     const submitLesson = async ({ targetStatus, redirectAfterSave }) => {
         if (saving) return;
         if (!token) {

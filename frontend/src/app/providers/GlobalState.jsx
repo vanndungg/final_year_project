@@ -1,30 +1,13 @@
+
+
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useEffect } from 'react';
 import axiosClient from '../../shared/api/axiosClient';
-
-/*
-    ==================== BƯỚC 2: GLOBAL STATE ====================
-    File này là nơi giữ trạng thái dùng chung của frontend.
-
-    Cách hiểu đơn giản cho người mới:
-    - token: chìa khóa đăng nhập do backend cấp
-    - user: thông tin người dùng hiện tại
-    - isLogged: đã đăng nhập hay chưa
-    - isAdmin: cờ kiểm tra nhanh giao diện admin
-    - courses: danh sách khóa học dùng chung nhiều nơi
-
-    Luồng dữ liệu chính:
-    1) Đọc token từ localStorage
-    2) Nếu có token -> gọi /users/infor -> lấy user + role
-    3) Gọi /courses -> lấy danh sách khóa học chung
-    4) Đưa tất cả ra ngoài bằng React Context (GlobalState)
-    ============================================================
-*/
+// quan ly state dung chung cho toan bo frontend.
 
 export const GlobalState = createContext();
-
+// cung cap token, user va du lieu khoa hoc cho cac component con.
 export const DataProvider = ({ children }) => {
-    // 1) Khởi tạo token một lần khi app bắt đầu chạy.
     const [token, setToken] = useState(() => {
         if (typeof window === 'undefined') return false;
         const firstLogin = localStorage.getItem('firstLogin');
@@ -34,14 +17,13 @@ export const DataProvider = ({ children }) => {
         return false;
     });
     const [isLogged, setIsLogged] = useState(false);
-    const [isAdmin, setIsAdmin] = useState(false); // 🆕 Thêm state kiểm tra Admin
+    const [isAdmin, setIsAdmin] = useState(false);
     const [user, setUser] = useState(null);
     const [courses, setCourses] = useState([]);
     const [callback, setCallback] = useState(false);
-
-    // 2) Nếu có token thì lấy thông tin user hiện tại.
     useEffect(() => {
         if (token) {
+            // lay thong tin user dang dang nhap tu backend.
             const getUserInfo = async () => {
                 try {
                     const res = await axiosClient.get('/users/infor', {
@@ -51,7 +33,7 @@ export const DataProvider = ({ children }) => {
                     setUser(res.data);
                     setIsLogged(true);
 
-                    // 🆕 Kiểm tra Role bằng số: 1 là Admin
+                    // cap nhat quyen admin dua tren role.
                     if (Number(res.data.role) === 1) {
                         setIsAdmin(true);
                     } else {
@@ -59,7 +41,7 @@ export const DataProvider = ({ children }) => {
                     }
 
                 } catch (err) {
-                    // Nếu token hết hạn hoặc lỗi xác thực
+                    // reset trang thai dang nhap khi token khong hop le.
                     console.error("Lỗi lấy thông tin user:", err);
                     localStorage.removeItem('firstLogin');
                     localStorage.removeItem('access_token');
@@ -72,13 +54,11 @@ export const DataProvider = ({ children }) => {
             getUserInfo();
         }
     }, [token]);
-
-    // 3) Tải danh sách khóa học dùng chung toàn app.
     useEffect(() => {
+        // lay danh sach khoa hoc de dung chung trong giao dien.
         const getCourses = async () => {
             try {
                 const res = await axiosClient.get('/courses');
-                // Backend trả về { courses: [...] }
                 setCourses(res.data.courses || []); 
             } catch (err) {
                 console.error("Lỗi lấy danh sách khóa học:", err);
@@ -86,13 +66,11 @@ export const DataProvider = ({ children }) => {
         };
         getCourses();
     }, [callback]); 
-
-    // 4) Xuất state dùng chung cho toàn bộ page/component.
     const state = {
         token: [token, setToken],
         userAPI: {
             isLogged: [isLogged, setIsLogged],
-            isAdmin: [isAdmin, setIsAdmin], // 🆕 Xuất isAdmin ra ngoài
+            isAdmin: [isAdmin, setIsAdmin],
             user: [user, setUser]
         },
         coursesAPI: {

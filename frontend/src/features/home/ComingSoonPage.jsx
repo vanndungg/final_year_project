@@ -1,10 +1,12 @@
+
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-
+// hien thi trang thong bao tinh nang dang duoc phat trien.
 const ComingSoon = () => {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState(null);
-
+  // xu ly form dang ky nhan thong bao khi tinh nang san sang.
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!email.trim()) {
@@ -85,7 +87,6 @@ const ComingSoon = () => {
           </div>
         </div>
       </main>
-
 
     </div>
   );

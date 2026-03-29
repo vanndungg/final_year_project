@@ -9,49 +9,49 @@ const COURSE_PRICING_VALUES = new Set(['paid', 'free']);
 const LESSON_TYPE_VALUES = new Set(['video', 'document', 'quiz', 'assignment']);
 const COURSE_VISIBILITY_VALUES = new Set(['public', 'private', 'unlisted']);
 const COURSE_LEVEL_VALUES = new Set(['beginner', 'intermediate', 'advanced', 'all-levels']);
-
+// chuan hoa chuoi dau vao.
 const normalizeText = (value) => String(value || '').trim();
-
+// chuyen gia tri ve so an toan.
 const toNumber = (value, fallback = 0) => {
     const numericValue = Number(value);
     return Number.isFinite(numericValue) ? numericValue : fallback;
 };
-
+// escape ky tu dac biet truoc khi tao regex.
 const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
+// chuan hoa trang thai khoa hoc.
 const normalizeStatus = (value, fallback = 'draft') => {
     const normalized = String(value || '').trim().toLowerCase();
     if (normalized === 'published') return 'publish';
     if (COURSE_STATUS_VALUES.has(normalized)) return normalized;
     return fallback;
 };
-
+// chuan hoa loai khoa hoc paid/free.
 const normalizePricingType = (value, priceValue) => {
     const normalized = String(value || '').trim().toLowerCase();
     if (COURSE_PRICING_VALUES.has(normalized)) return normalized;
     return Number(priceValue || 0) > 0 ? 'paid' : 'free';
 };
-
+// chuan hoa loai bai hoc.
 const normalizeLessonType = (value) => {
     const normalized = String(value || '').trim().toLowerCase();
     return LESSON_TYPE_VALUES.has(normalized) ? normalized : 'video';
 };
-
+// chuan hoa che do hien thi khoa hoc.
 const normalizeVisibility = (value) => {
     const normalized = String(value || '').trim().toLowerCase();
     return COURSE_VISIBILITY_VALUES.has(normalized) ? normalized : 'public';
 };
-
+// chuan hoa cap do khoa hoc.
 const normalizeLevel = (value) => {
     const normalized = String(value || '').trim().toLowerCase();
     return COURSE_LEVEL_VALUES.has(normalized) ? normalized : 'all-levels';
 };
-
+// tao URL YouTube tu video_id.
 const buildYoutubeUrlFromVideoId = (videoId) => {
     const normalizedVideoId = normalizeText(videoId);
     return normalizedVideoId ? `https://www.youtube.com/watch?v=${normalizedVideoId}` : '';
 };
-
+// dua lessons ve dang Array de xu ly.
 const parseLessonsInput = (lessonsInput) => {
     if (lessonsInput === undefined) return undefined;
     if (Array.isArray(lessonsInput)) return lessonsInput;
@@ -67,7 +67,7 @@ const parseLessonsInput = (lessonsInput) => {
 
     return null;
 };
-
+// validate va chuan hoa danh sach lesson.
 const normalizeLessonsPayload = (rawLessons) => {
     if (!Array.isArray(rawLessons)) {
         return { error: 'Danh sách lesson không hợp lệ.' };
@@ -123,7 +123,7 @@ const normalizeLessonsPayload = (rawLessons) => {
 
     return { lessons: normalizedLessons };
 };
-
+// validate va chuan hoa du lieu khoa hoc.
 const normalizeCoursePayload = (rawPayload = {}) => {
     const title = normalizeText(rawPayload.title);
     const category = normalizeText(rawPayload.category);
@@ -159,7 +159,7 @@ const normalizeCoursePayload = (rawPayload = {}) => {
         }
     };
 };
-
+// dong bo lesson create/update/delete theo danh sach moi.
 const syncCourseLessons = async (courseId, normalizedLessons) => {
     const existingLessons = await Lessons.find({ courseId }).select('_id').lean();
     const existingLessonIdSet = new Set(existingLessons.map((lesson) => String(lesson._id)));
@@ -213,6 +213,7 @@ const syncCourseLessons = async (courseId, normalizedLessons) => {
 };
 
 const courseCtrl = {
+// lay danh sach khoa hoc va thong ke co ban.
     getCourses: async (req, res) => {
         try {
             const courses = await Courses.find().sort('-createdAt');
@@ -247,7 +248,7 @@ const courseCtrl = {
             return res.status(500).json({ msg: err.message });
         }
     },
-
+// tao khoa hoc moi kem danh sach lesson.
     createCourse: async (req, res) => {
         try {
             const { coursePayload, error } = normalizeCoursePayload(req.body);
@@ -288,7 +289,7 @@ const courseCtrl = {
             return res.status(500).json({ msg: err.message });
         }
     },
-
+// lay chi tiet khoa hoc kem lessons va reviews.
     getCourseDetail: async (req, res) => {
         try {
             const course = await Courses.findById(req.params.id);
@@ -320,16 +321,16 @@ const courseCtrl = {
             return res.status(500).json({ msg: err.message });
         }
     },
-
+// lay tien do hoc vien theo tung khoa hoc.
     getCourseStudentsProgress: async (req, res) => {
         try {
             const courseId = req.params.id;
-
             const course = await Courses.findById(courseId).select('_id title teacher').lean();
             if (!course) {
                 return res.status(404).json({ msg: 'Khóa học không tồn tại.' });
             }
-
+            //    - Dem tong so lesson cua khoa hoc.
+            //    - Lay danh sach hoc vien da enrolled khoa hoc nay.
             const [totalLessons, students] = await Promise.all([
                 Lessons.countDocuments({ courseId }),
                 Users.find({ enrolledCourses: courseId })
@@ -337,23 +338,25 @@ const courseCtrl = {
                     .sort({ createdAt: -1 })
                     .lean()
             ]);
-
+            //    Neu khong co hoc vien thi bo qua query Progress de do ton tai.
             const studentIds = students.map((student) => student._id);
             const progressDocs = studentIds.length > 0
                 ? await Progress.find({ courseId, userId: { $in: studentIds } })
                     .select('userId completedLessons updatedAt')
                     .lean()
                 : [];
-
             const progressMap = new Map(
                 progressDocs.map((doc) => [String(doc.userId), doc])
             );
-
             const studentProgress = students.map((student) => {
                 const progressDoc = progressMap.get(String(student._id));
+
+                // Dem so bai da hoan thanh; neu chua co progress thi mac dinh = 0.
                 const completedCount = Array.isArray(progressDoc?.completedLessons)
                     ? progressDoc.completedLessons.length
                     : 0;
+
+                // Tinh phan tram tien do, co chan truong hop 0 lesson de tranh chia cho 0.
                 const progressPercent = totalLessons > 0
                     ? Math.round((completedCount / totalLessons) * 100)
                     : 0;
@@ -371,7 +374,6 @@ const courseCtrl = {
                     joinedAt: student.createdAt || null
                 };
             });
-
             return res.json({
                 course,
                 totalStudents: studentProgress.length,
@@ -382,7 +384,7 @@ const courseCtrl = {
             return res.status(500).json({ msg: err.message });
         }
     },
-
+// cap nhat khoa hoc va dong bo lessons neu co.
     updateCourse: async (req, res) => {
         try {
             const { coursePayload, error } = normalizeCoursePayload(req.body);
@@ -433,7 +435,7 @@ const courseCtrl = {
             return res.status(500).json({ msg: err.message });
         }
     },
-
+// xoa khoa hoc va du lieu lien quan.
     deleteCourse: async (req, res) => {
         try {
             const deletedCourse = await Courses.findByIdAndDelete(req.params.id);
