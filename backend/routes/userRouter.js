@@ -4,6 +4,7 @@ const router = require('express').Router();
 const userCtrl = require('../controllers/userCtrl');
 const auth = require('../middleware/auth');
 const authAdmin = require('../middleware/authAdmin');
+const authStaff = require('../middleware/authStaff');
 
 /**
  * @swagger
@@ -59,7 +60,7 @@ router.get('/enrolled_courses', auth, userCtrl.getEnrolledCourses);
 
 // 6. Lấy toàn bộ danh sách người dùng
 // Đường dẫn: GET /api/users/all_info
-router.get('/all_info', auth, authAdmin, userCtrl.getUsersAllInfor);
+router.get('/all_info', auth, authStaff, userCtrl.getUsersAllInfor);
 
 // 7. Cập nhật quyền (Admin/User)
 // Đường dẫn: PATCH /api/users/update_role/:id
@@ -72,6 +73,6 @@ router.get('/successful_payments', auth, authAdmin, userCtrl.getSuccessfulPaymen
 
 // 8. Lay khoa hoc va tien do cua hoc vien
 // Duong dan: GET /api/users/student-courses/:studentId
-router.get('/student-courses/:studentId', auth, authAdmin, userCtrl.getStudentCourses);
+router.get('/student-courses/:studentId', auth, authStaff, userCtrl.getStudentCourses);
 
 module.exports = router;

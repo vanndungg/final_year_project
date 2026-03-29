@@ -36,7 +36,8 @@ const AdminPanelLayout = ({ children }) => {
         pathname.startsWith('/admin/lessons') ||
         pathname.startsWith('/admin/create_lesson') ||
         pathname.startsWith('/admin/edit_lesson');
-    const isUsersActive = pathname.startsWith('/admin/users');
+    const isStudentsActive = pathname.startsWith('/admin/users') || pathname.startsWith('/admin/student-courses');
+    const isStaffAccountsActive = pathname.startsWith('/admin/staff-accounts');
     const isPaymentsActive = pathname.startsWith('/admin/payments');
 
     const accountName = user?.name || 'Admin';
@@ -69,10 +70,14 @@ const AdminPanelLayout = ({ children }) => {
                         <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>book_2</span>
                         <span className="text-sm font-semibold">Courses</span>
                     </Link>
+                    <Link to="/admin/users" className={buildNavItemClassName(isStudentsActive)}>
+                        <span className="material-symbols-outlined">school</span>
+                        <span className="text-sm font-semibold">Students</span>
+                    </Link>
                     {isAdmin && (
-                        <Link to="/admin/users" className={buildNavItemClassName(isUsersActive)}>
-                            <span className="material-symbols-outlined">group</span>
-                            <span className="text-sm font-semibold">Students</span>
+                        <Link to="/admin/staff-accounts" className={buildNavItemClassName(isStaffAccountsActive)}>
+                            <span className="material-symbols-outlined">admin_panel_settings</span>
+                            <span className="text-sm font-semibold">Staff Accounts</span>
                         </Link>
                     )}
                     {isAdmin && (

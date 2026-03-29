@@ -24,6 +24,7 @@ import ManageLessons from '../features/staff/manager/courses/lessons/ManageLesso
 import CreateLesson from '../features/staff/manager/courses/lessons/CreateLessonPage';
 
 import ManageUsers from '../features/staff/manager/users/ManageUsersPage';
+import ManageStaffAccounts from '../features/staff/manager/users/ManageStaffAccountsPage';
 import StudentCourses from '../features/staff/manager/users/StudentCoursesPage';
 import ManagePayments from '../features/staff/manager/payments/ManagePaymentsPage';
 import ManageCourseStudents from '../features/staff/manager/courses/ManageCourseStudentsPage';
@@ -69,6 +70,8 @@ function App() {
               <Route path="/admin/edit_course" element={<CreateCourse />} />
               <Route path="/admin/edit_course/:id" element={<CreateCourse />} />
               <Route path="/admin/course-progress/:courseId" element={<ManageCourseStudents />} />
+              <Route path="/admin/users" element={<ManageUsers />} />
+              <Route path="/admin/student-courses/:studentId" element={<StudentCourses />} />
 
               <Route path="/admin/lessons/:courseId" element={<ManageLessons />} />
               <Route path="/admin/create_lesson/:courseId" element={<CreateLesson />} />
@@ -77,8 +80,7 @@ function App() {
 
             <Route element={<AdminRoute />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/admin/users" element={<ManageUsers />} />
-              <Route path="/admin/student-courses/:studentId" element={<StudentCourses />} />
+              <Route path="/admin/staff-accounts" element={<ManageStaffAccounts />} />
               <Route path="/admin/payments" element={<ManagePayments />} />
           </Route>
         </Routes>

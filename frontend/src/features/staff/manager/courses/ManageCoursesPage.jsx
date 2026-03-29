@@ -12,11 +12,13 @@ const ManageCourses = () => {
     const state = useContext(GlobalState);
     const [courses = []] = state?.coursesAPI?.courses || [[]];
     const [token = ''] = state?.token || [''];
+    const [user] = state?.userAPI?.user || [null];
     const [callback = false, setCallback] = state?.coursesAPI?.callback || [false, () => {}];
 
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('All Categories');
     const [statusFilter, setStatusFilter] = useState('All Status');
+    const isAdmin = Number(user?.role) === 1;
 
     const safeCourses = useMemo(() => (Array.isArray(courses) ? courses : []), [courses]);
 
@@ -201,9 +203,11 @@ const ManageCourses = () => {
                                                         <Link to={`/admin/course-progress/${course._id}`} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors" title="Students Progress">
                                                             <span className="material-symbols-outlined text-[20px]">analytics</span>
                                                         </Link>
-                                                        <button onClick={() => deleteCourse(course._id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Delete">
-                                                            <span className="material-symbols-outlined text-[20px]">delete</span>
-                                                        </button>
+                                                        {isAdmin && (
+                                                            <button onClick={() => deleteCourse(course._id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Delete">
+                                                                <span className="material-symbols-outlined text-[20px]">delete</span>
+                                                            </button>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             );

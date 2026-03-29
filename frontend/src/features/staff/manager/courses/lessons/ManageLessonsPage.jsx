@@ -11,6 +11,8 @@ const ManageLessons = () => {
     const params = useParams();
     const state = useContext(GlobalState);
     const [token = ''] = state?.token || [''];
+    const [user] = state?.userAPI?.user || [null];
+    const isAdmin = Number(user?.role) === 1;
     
     const [lessons, setLessons] = useState([]);
     const [courseName, setCourseName] = useState('');
@@ -141,12 +143,14 @@ const ManageLessons = () => {
                                     >
                                         Sửa
                                     </Link>
-                                    <button 
-                                        onClick={() => deleteLesson(lesson._id)}
-                                        className="flex-1 md:flex-none text-center bg-gray-50 text-red-500 px-5 py-2 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all"
-                                    >
-                                        Xóa
-                                    </button>
+                                    {isAdmin && (
+                                        <button 
+                                            onClick={() => deleteLesson(lesson._id)}
+                                            className="flex-1 md:flex-none text-center bg-gray-50 text-red-500 px-5 py-2 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all"
+                                        >
+                                            Xóa
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))
