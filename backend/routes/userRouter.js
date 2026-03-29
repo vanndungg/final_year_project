@@ -70,4 +70,8 @@ router.get('/admin_stats', auth, authAdmin, userCtrl.getAdminStats);
 router.get('/course_performance', auth, authAdmin, userCtrl.getCoursePerformanceStats);
 router.get('/successful_payments', auth, authAdmin, userCtrl.getSuccessfulPayments);
 
+// 8. Lay khoa hoc va tien do cua hoc vien
+// Duong dan: GET /api/users/student-courses/:studentId
+router.get('/student-courses/:studentId', auth, authAdmin, userCtrl.getStudentCourses);
+
 module.exports = router;

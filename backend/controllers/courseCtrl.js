@@ -338,7 +338,7 @@ const courseCtrl = {
                     .sort({ createdAt: -1 })
                     .lean()
             ]);
-            //    Neu khong co hoc vien thi bo qua query Progress de do ton tai.
+            //    Neu khong co hoc vien thi bo qua query Progress.
             const studentIds = students.map((student) => student._id);
             const progressDocs = studentIds.length > 0
                 ? await Progress.find({ courseId, userId: { $in: studentIds } })

@@ -575,6 +575,68 @@ const userCtrl = {
         } catch (err) {
             return res.status(500).json({ msg: err.message });
         }
+    },
+
+    // admin xem khoa hoc va tien do cua hoc vien.
+    getStudentCourses: async (req, res) => {
+        try {
+            const { studentId } = req.params;
+
+            // Lay thong tin hoc vien
+            const student = await Users.findById(studentId)
+                .select('name email avatar enrolledCourses')
+                .populate('enrolledCourses');
+
+            if (!student) {
+                return res.status(404).json({ msg: 'Không tìm thấy học viên.' });
+            }
+
+            // Lay danh sach khoa hoc da dang ky
+            const courses = student.enrolledCourses || [];
+
+            // Lay tien do cho tung khoa hoc
+            const courseDetails = await Promise.all(
+                courses.map(async (course) => {
+                    const Progress = require('../models/Progress');
+                    const Lessons = require('../models/Lesson');
+
+                    const progress = await Progress.findOne({
+                        userId: studentId,
+                        courseId: course._id
+                    }).select('completedLessons assignmentSubmissions');
+
+                    const totalLessons = await Lessons.countDocuments({ courseId: course._id });
+                    const completedCount = progress?.completedLessons?.length || 0;
+                    const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+
+                    return {
+                        _id: course._id,
+                        title: course.title,
+                        description: course.description,
+                        image: course.image,
+                        category: course.category,
+                        price: course.price,
+                        pricingType: course.pricingType,
+                        totalLessons,
+                        completedLessons: completedCount,
+                        progressPercent,
+                        createdAt: course.createdAt
+                    };
+                })
+            );
+
+            return res.json({
+                student: {
+                    _id: student._id,
+                    name: student.name,
+                    email: student.email,
+                    avatar: student.avatar
+                },
+                courses: courseDetails
+            });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
     }
 };
 

@@ -4,11 +4,12 @@ import React, { useState, useEffect, useContext } from 'react';
 import { GlobalState } from '../../../../app/providers/GlobalState';
 import axiosClient from '../../../../shared/api/axiosClient';
 import { toast } from 'react-toastify';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import AdminPanelLayout from '../../pages/AdminPanelLayout';
 // hien thi danh sach user va cho phep admin doi role.
 const ManageUsers = () => {
     const state = useContext(GlobalState);
+    const navigate = useNavigate();
     const [token = ''] = state?.token || [''];
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -223,7 +224,11 @@ const ManageUsers = () => {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-right space-x-1">
-                                                    <button className="p-2 text-slate-400 hover:text-primary transition-colors" title="View">
+                                                    <button 
+                                                        onClick={() => navigate(`/admin/student-courses/${user._id}`)}
+                                                        className="p-2 text-slate-400 hover:text-primary transition-colors" 
+                                                        title="View"
+                                                    >
                                                         <span className="material-symbols-outlined text-[20px]">visibility</span>
                                                     </button>
                                                     <button className="p-2 text-slate-400 hover:text-primary transition-colors" title="Edit">

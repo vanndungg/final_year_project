@@ -24,6 +24,7 @@ import ManageLessons from '../features/staff/manager/courses/lessons/ManageLesso
 import CreateLesson from '../features/staff/manager/courses/lessons/CreateLessonPage';
 
 import ManageUsers from '../features/staff/manager/users/ManageUsersPage';
+import StudentCourses from '../features/staff/manager/users/StudentCoursesPage';
 import ManagePayments from '../features/staff/manager/payments/ManagePaymentsPage';
 import ManageCourseStudents from '../features/staff/manager/courses/ManageCourseStudentsPage';
 import ComingSoon from '../features/home/ComingSoonPage';
@@ -77,6 +78,7 @@ function App() {
             <Route element={<AdminRoute />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/users" element={<ManageUsers />} />
+              <Route path="/admin/student-courses/:studentId" element={<StudentCourses />} />
               <Route path="/admin/payments" element={<ManagePayments />} />
           </Route>
         </Routes>

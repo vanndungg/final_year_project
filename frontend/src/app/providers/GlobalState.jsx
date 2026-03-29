@@ -1,6 +1,3 @@
-
-
-/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useEffect } from 'react';
 import axiosClient from '../../shared/api/axiosClient';
 // quan ly state dung chung cho toan bo frontend.
