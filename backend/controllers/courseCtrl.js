@@ -321,6 +321,68 @@ const courseCtrl = {
         }
     },
 
+    getCourseStudentsProgress: async (req, res) => {
+        try {
+            const courseId = req.params.id;
+
+            const course = await Courses.findById(courseId).select('_id title teacher').lean();
+            if (!course) {
+                return res.status(404).json({ msg: 'Khóa học không tồn tại.' });
+            }
+
+            const [totalLessons, students] = await Promise.all([
+                Lessons.countDocuments({ courseId }),
+                Users.find({ enrolledCourses: courseId })
+                    .select('_id name email avatar role createdAt')
+                    .sort({ createdAt: -1 })
+                    .lean()
+            ]);
+
+            const studentIds = students.map((student) => student._id);
+            const progressDocs = studentIds.length > 0
+                ? await Progress.find({ courseId, userId: { $in: studentIds } })
+                    .select('userId completedLessons updatedAt')
+                    .lean()
+                : [];
+
+            const progressMap = new Map(
+                progressDocs.map((doc) => [String(doc.userId), doc])
+            );
+
+            const studentProgress = students.map((student) => {
+                const progressDoc = progressMap.get(String(student._id));
+                const completedCount = Array.isArray(progressDoc?.completedLessons)
+                    ? progressDoc.completedLessons.length
+                    : 0;
+                const progressPercent = totalLessons > 0
+                    ? Math.round((completedCount / totalLessons) * 100)
+                    : 0;
+
+                return {
+                    _id: student._id,
+                    name: student.name || 'Học viên',
+                    email: student.email || '',
+                    avatar: student.avatar || '',
+                    role: Number(student.role || 0),
+                    completedCount,
+                    totalLessons,
+                    progressPercent,
+                    lastProgressAt: progressDoc?.updatedAt || null,
+                    joinedAt: student.createdAt || null
+                };
+            });
+
+            return res.json({
+                course,
+                totalStudents: studentProgress.length,
+                totalLessons,
+                students: studentProgress
+            });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
     updateCourse: async (req, res) => {
         try {
             const { coursePayload, error } = normalizeCoursePayload(req.body);

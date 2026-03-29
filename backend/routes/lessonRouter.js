@@ -2,6 +2,7 @@ const router = require('express').Router();
 const lessonCtrl = require('../controllers/lessonCtrl');
 const auth = require('../middleware/auth');
 const authAdmin = require('../middleware/authAdmin');
+const authStaff = require('../middleware/authStaff');
 
 // Middleware hỗ trợ: Không bắt buộc đăng nhập nhưng nếu có token thì giải mã để check quyền mua học
 const optionalAuth = (req, res, next) => {
@@ -68,13 +69,13 @@ const optionalAuth = (req, res, next) => {
  */
 
 // Lấy bài học (Dùng optionalAuth để check xem ai đang xem)
-router.get('/detail/:id', auth, authAdmin, lessonCtrl.getSingleLesson);
+router.get('/detail/:id', auth, authStaff, lessonCtrl.getSingleLesson);
 router.get('/:id', optionalAuth, lessonCtrl.getLessonsByCourse);
 
 // Admin thêm bài học
-router.post('/', auth, authAdmin, lessonCtrl.createLesson);
+router.post('/', auth, authStaff, lessonCtrl.createLesson);
 
-router.put('/:id', auth, authAdmin, lessonCtrl.updateLesson);
+router.put('/:id', auth, authStaff, lessonCtrl.updateLesson);
 router.delete('/:id', auth, authAdmin, lessonCtrl.deleteLesson);
 
 module.exports = router;

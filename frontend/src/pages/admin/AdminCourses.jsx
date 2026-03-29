@@ -237,6 +237,9 @@ const AdminCourses = () => {
                                                         <Link to={`/admin/lessons/${course._id}`} className="p-2 text-slate-400 hover:text-blue-500 transition-colors" title="Lessons">
                                                             <span className="material-symbols-outlined text-[20px]">book_5</span>
                                                         </Link>
+                                                        <Link to={`/admin/course-progress/${course._id}`} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors" title="Students Progress">
+                                                            <span className="material-symbols-outlined text-[20px]">analytics</span>
+                                                        </Link>
                                                         <button onClick={() => deleteCourse(course._id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Delete">
                                                             <span className="material-symbols-outlined text-[20px]">delete</span>
                                                         </button>

@@ -14,6 +14,7 @@ import DetailCourse from './pages/DetailCourse';
 import Checkout from './pages/Checkout';
 import PaymentCheckout from './pages/PaymentCheckout';
 import AdminRoute from './components/AdminRoute'; 
+import StaffRoute from './components/StaffRoute';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminCourses from './pages/admin/AdminCourses'; 
 import CreateCourse from './pages/admin/CreateCourse'; 
@@ -25,6 +26,7 @@ import CreateLesson from './pages/admin/CreateLesson';
 // 🆕 QUẢN LÝ TÀI KHOẢN (Thêm mới)
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminPayments from './pages/admin/AdminPayments';
+import AdminCourseStudents from './pages/admin/AdminCourseStudents';
 import ComingSoon from './pages/ComingSoon';
 
 function AppLayout() {
@@ -61,22 +63,27 @@ function App() {
             <Route path="*" element={<div className="text-center p-20 font-bold text-gray-500">404 - Trang không tồn tại</div>} />
           </Route>
 
-          {/* NHÓM 2: ADMIN PANEL (Protected Routes) */}
-          <Route element={<AdminRoute />}>
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            {/* NHÓM 2: STAFF PANEL (Admin + Giáo viên) */}
+            <Route element={<StaffRoute />}>
               <Route path="/admin/courses" element={<AdminCourses />} />
               <Route path="/admin/create_course" element={<Navigate to="/admin/edit_course" replace />} />
               <Route path="/admin/edit_course" element={<CreateCourse />} />
               <Route path="/admin/edit_course/:id" element={<CreateCourse />} />
-
-              {/* 👥 QUẢN LÝ TÀI KHOẢN (Mới thêm vào menu chính của Admin) */}
-              <Route path="/admin/users" element={<AdminUsers />} />
-              <Route path="/admin/payments" element={<AdminPayments />} />
+              <Route path="/admin/course-progress/:courseId" element={<AdminCourseStudents />} />
 
               {/* 🎬 QUẢN LÝ BÀI HỌC (Truy cập thông qua từng khóa học cụ thể) */}
               <Route path="/admin/lessons/:courseId" element={<AdminLessons />} />
               <Route path="/admin/create_lesson/:courseId" element={<CreateLesson />} />
               <Route path="/admin/edit_lesson/:lessonId" element={<CreateLesson />} />
+            </Route>
+
+            {/* NHÓM 3: ADMIN ONLY */}
+            <Route element={<AdminRoute />}>
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
+              {/* 👥 QUẢN LÝ TÀI KHOẢN (Mới thêm vào menu chính của Admin) */}
+              <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/payments" element={<AdminPayments />} />
           </Route>
         </Routes>
       </div>

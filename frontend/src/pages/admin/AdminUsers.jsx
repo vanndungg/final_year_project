@@ -19,7 +19,7 @@ const AdminUsers = () => {
     const ROLES = [
         { value: 0, label: "Học viên", color: "bg-gray-100 text-gray-500" },
         { value: 1, label: "Admin", color: "bg-purple-100 text-purple-600 border-purple-200" },
-        { value: 2, label: "Biên tập viên", color: "bg-blue-100 text-blue-600" }
+        { value: 2, label: "Giáo viên", color: "bg-blue-100 text-blue-600" }
     ];
 
     useEffect(() => {
@@ -70,7 +70,7 @@ const AdminUsers = () => {
         const matchesRole = roleFilter === 'All Roles' || 
                            (roleFilter === 'Student' && user.role === 0) ||
                            (roleFilter === 'Admin' && user.role === 1) ||
-                           (roleFilter === 'Editor' && user.role === 2);
+                           (roleFilter === 'Teacher' && user.role === 2);
         const matchesStatus = statusFilter === 'All Status' || 
                              (statusFilter === 'Active' && user.role !== undefined) || // Assuming all users are active
                              (statusFilter === 'Inactive' && false); // No inactive logic yet
@@ -154,7 +154,7 @@ const AdminUsers = () => {
                             <option>All Roles</option>
                             <option>Student</option>
                             <option>Admin</option>
-                            <option>Editor</option>
+                            <option>Teacher</option>
                         </select>
                         <select 
                             className="bg-slate-100 dark:bg-slate-800 border-none rounded-lg py-2 pl-4 pr-10 text-sm focus:ring-2 focus:ring-primary/20 text-slate-600 dark:text-slate-400"

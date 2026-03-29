@@ -2,6 +2,7 @@ const router = require('express').Router();
 const courseCtrl = require('../controllers/courseCtrl');
 const auth = require('../middleware/auth');
 const authAdmin = require('../middleware/authAdmin');
+const authStaff = require('../middleware/authStaff');
 
 /**
  * @swagger
@@ -42,7 +43,9 @@ const authAdmin = require('../middleware/authAdmin');
  */
 router.route('/')
     .get(courseCtrl.getCourses)
-    .post(auth, authAdmin, courseCtrl.createCourse);
+    .post(auth, authStaff, courseCtrl.createCourse);
+
+router.get('/:id/students-progress', auth, authStaff, courseCtrl.getCourseStudentsProgress);
 
 /**
  * @swagger
@@ -62,7 +65,7 @@ router.route('/')
  */
 router.route('/:id')
     .get(courseCtrl.getCourseDetail)
-    .put(auth, authAdmin, courseCtrl.updateCourse)
+    .put(auth, authStaff, courseCtrl.updateCourse)
     .delete(auth, authAdmin, courseCtrl.deleteCourse);
 
 module.exports = router;

@@ -13,8 +13,10 @@ function Header() {
     const userAPI = state?.userAPI;
     const [isLogged, setIsLogged] = userAPI?.isLogged || [false, () => {}];
     const [user] = userAPI?.user || [null];
-    const [isAdmin] = userAPI?.isAdmin || [false];
     const cartCount = Array.isArray(user?.cart) ? user.cart.length : 0;
+    const userRole = Number(user?.role);
+    const isAdmin = userRole === 1;
+    const isStaff = isAdmin || userRole === 2;
 
     const accountRoleLabel = useMemo(() => {
         const role = Number(user?.role);
@@ -74,12 +76,12 @@ function Header() {
                         <Link to="/courses" className="text-sm font-medium hover:text-primary transition-colors">Khóa học</Link>
                         <Link to="/coming-soon" className="text-sm font-medium hover:text-primary transition-colors">Danh mục</Link>
                         <Link to="/coming-soon" className="text-sm font-medium hover:text-primary transition-colors">Giảng viên</Link>
-                        {isAdmin && (
+                        {isStaff && (
                             <Link
-                                to="/admin/dashboard"
+                                to={isAdmin ? '/admin/dashboard' : '/admin/courses'}
                                 className="text-sm font-medium text-amber-600 hover:text-amber-700 transition-colors"
                             >
-                                Quản trị
+                                Quan ly
                             </Link>
                         )}
                     </nav>

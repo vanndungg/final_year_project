@@ -483,9 +483,15 @@ const userCtrl = {
     updateRole: async (req, res) => {
         try {
             const { role } = req.body;
+            const nextRole = Number(role);
+
+            if (![0, 1, 2].includes(nextRole)) {
+                return res.status(400).json({ msg: 'Role không hợp lệ. Chỉ chấp nhận 0, 1, 2.' });
+            }
+
             await Users.findOneAndUpdate(
                 { _id: req.params.id }, 
-                { role: Number(role) }
+                { role: nextRole }
             );
             
             res.json({ msg: "Cập nhật quyền hạn thành công!" });

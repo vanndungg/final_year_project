@@ -6,7 +6,7 @@ const getRoleLabel = (roleValue) => {
     const normalizedRole = Number(roleValue);
 
     if (normalizedRole === 1) return 'Admin';
-    if (normalizedRole === 2) return 'Biên tập viên';
+    if (normalizedRole === 2) return 'Giáo viên';
     return 'Học viên';
 };
 
@@ -24,6 +24,8 @@ const AdminPanelLayout = ({ children }) => {
     const [user] = state?.userAPI?.user || [null];
 
     const pathname = location.pathname;
+    const role = Number(user?.role);
+    const isAdmin = role === 1;
     const isDashboardActive = pathname === '/admin/dashboard';
     const isCoursesActive = pathname.startsWith('/admin/courses') ||
         pathname.startsWith('/admin/create_course') ||
@@ -55,22 +57,28 @@ const AdminPanelLayout = ({ children }) => {
                         <span className="material-symbols-outlined">home</span>
                         <span className="text-sm font-semibold">Home</span>
                     </Link>
-                    <Link to="/admin/dashboard" className={buildNavItemClassName(isDashboardActive)}>
-                        <span className="material-symbols-outlined">dashboard</span>
-                        <span className="text-sm font-semibold">Dashboard</span>
-                    </Link>
+                    {isAdmin && (
+                        <Link to="/admin/dashboard" className={buildNavItemClassName(isDashboardActive)}>
+                            <span className="material-symbols-outlined">dashboard</span>
+                            <span className="text-sm font-semibold">Dashboard</span>
+                        </Link>
+                    )}
                     <Link to="/admin/courses" className={buildNavItemClassName(isCoursesActive)}>
                         <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>book_2</span>
                         <span className="text-sm font-semibold">Courses</span>
                     </Link>
-                    <Link to="/admin/users" className={buildNavItemClassName(isUsersActive)}>
-                        <span className="material-symbols-outlined">group</span>
-                        <span className="text-sm font-semibold">Students</span>
-                    </Link>
-                    <Link to="/admin/payments" className={buildNavItemClassName(isPaymentsActive)}>
-                        <span className="material-symbols-outlined">receipt_long</span>
-                        <span className="text-sm font-semibold">Payments</span>
-                    </Link>
+                    {isAdmin && (
+                        <Link to="/admin/users" className={buildNavItemClassName(isUsersActive)}>
+                            <span className="material-symbols-outlined">group</span>
+                            <span className="text-sm font-semibold">Students</span>
+                        </Link>
+                    )}
+                    {isAdmin && (
+                        <Link to="/admin/payments" className={buildNavItemClassName(isPaymentsActive)}>
+                            <span className="material-symbols-outlined">receipt_long</span>
+                            <span className="text-sm font-semibold">Payments</span>
+                        </Link>
+                    )}
                 </nav>
 
                 <div className="p-4 border-t border-slate-100 dark:border-slate-800">
