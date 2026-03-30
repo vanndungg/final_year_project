@@ -153,6 +153,10 @@ const DetailCourse = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             toast.success(response.data.msg || 'Dang ky khoa hoc thanh cong');
+            const userRes = await axiosClient.get('/users/infor', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setUser(userRes.data);
             setCallback((prev) => !prev);
         } catch (error) {
             toast.error(error.response?.data?.msg || 'Dang ky khoa hoc that bai');
