@@ -10,6 +10,7 @@ import LessonsSection from './LessonsSection';
 import CourseReviewsSection from './review/CourseReviewsSection';
 import { getStudentCount } from '../../../shared/utils/courseDataUtils';
 import { normalizeLessonType } from './lesson/LessonUtils';
+import { showConfirm } from '../../../shared/utils/confirmUtils';
 import { renderRatingStars } from './review/ReviewUtils.jsx';
 import usePdfLessonUrl from './lesson/document/PdfUrl';
 // hien thi chi tiet khoa hoc, lesson, tien do hoc va danh gia cua hoc vien.
@@ -21,6 +22,7 @@ const DetailCourse = () => {
     const [token] = state.token;
     const [user, setUser] = state.userAPI.user;
     const [isLogged] = state.userAPI.isLogged;
+    const [confirmDialog, setConfirmDialog] = state.confirmDialog;
 
     const [course, setCourse] = useState(null);
     const [lessons, setLessons] = useState([]);
@@ -331,13 +333,19 @@ const DetailCourse = () => {
         if (!lesson) return;
 
         if (isLessonCompleted(lesson._id)) {
-            const confirmed = window.confirm('Ban co muon huy hoan thanh bai hoc nay khong?');
+            const confirmed = await showConfirm(setConfirmDialog, {
+                title: 'Hủy hoàn thành',
+                message: 'Bạn có muốn hủy hoàn thành bài học này không?'
+            });
             if (!confirmed) return;
             await unmarkLessonComplete(lesson);
             return;
         }
 
-        const confirmed = window.confirm('Ban co chac chan muon danh dau hoan thanh bai hoc nay khong?');
+        const confirmed = await showConfirm(setConfirmDialog, {
+            title: 'Xác nhận hoàn thành',
+            message: 'Bạn có chắc chắn muốn đánh dấu hoàn thành bài học này không?'
+        });
         if (!confirmed) return;
 
         await markLessonComplete(lesson);

@@ -7,12 +7,14 @@ import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom';
 import AdminPanelLayout from '../../pages/AdminPanelLayout';
 import { getLessonCount, getStudentCount, normalizeCourseStatus } from '../../../../shared/utils/courseDataUtils';
+import { showConfirm } from '../../../../shared/utils/confirmUtils';
 // hien thi danh sach khoa hoc cho admin/staff quan ly.
 const ManageCourses = () => {
     const state = useContext(GlobalState);
     const [courses = []] = state?.coursesAPI?.courses || [[]];
     const [token = ''] = state?.token || [''];
     const [user] = state?.userAPI?.user || [null];
+    const [confirmDialog, setConfirmDialog] = state.confirmDialog;
     const [callback = false, setCallback] = state?.coursesAPI?.callback || [false, () => {}];
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -64,16 +66,20 @@ const ManageCourses = () => {
             return;
         }
 
-        if (window.confirm('Ban co chac chan muon xoa khoa hoc nay khong?')) {
-            try {
-                const res = await axiosClient.delete(`/courses/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                toast.success(res.data.msg || 'Xoa thanh cong!');
-                setCallback(!callback);
-            } catch (err) {
-                toast.error(err.response?.data?.msg || 'Loi khi xoa');
-            }
+        const confirmed = await showConfirm(setConfirmDialog, {
+            title: 'Xóa khóa học',
+            message: 'Bạn có chắc chắn muốn xóa khóa học này không?'
+        });
+        if (!confirmed) return;
+
+        try {
+            const res = await axiosClient.delete(`/courses/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success(res.data.msg || 'Xoa thanh cong!');
+            setCallback(!callback);
+        } catch (err) {
+            toast.error(err.response?.data?.msg || 'Loi khi xoa');
         }
     };
 

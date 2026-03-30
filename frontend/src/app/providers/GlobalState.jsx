@@ -18,6 +18,13 @@ export const DataProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [courses, setCourses] = useState([]);
     const [callback, setCallback] = useState(false);
+    const [confirmDialog, setConfirmDialog] = useState({
+        isOpen: false,
+        title: 'Xác nhận',
+        message: '',
+        onConfirm: () => {},
+        onCancel: () => {}
+    });
     useEffect(() => {
         if (token) {
             // lay thong tin user dang dang nhap tu backend.
@@ -73,7 +80,8 @@ export const DataProvider = ({ children }) => {
         coursesAPI: {
             courses: [courses, setCourses],
             callback: [callback, setCallback]
-        }
+        },
+        confirmDialog: [confirmDialog, setConfirmDialog]
     };
 
     return (

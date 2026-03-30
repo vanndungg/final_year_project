@@ -29,6 +29,7 @@ import StudentCourses from '../features/staff/manager/users/StudentCoursesPage';
 import ManagePayments from '../features/staff/manager/payments/ManagePaymentsPage';
 import ManageCourseStudents from '../features/staff/manager/courses/ManageCourseStudentsPage';
 import ComingSoon from '../features/home/ComingSoonPage';
+import ConfirmDialog from '../shared/components/ConfirmDialog';
 // tao layout chung co header, noi dung va footer.
 function AppLayout() {
   return (
@@ -38,6 +39,7 @@ function AppLayout() {
         <Outlet />
       </main>
       <Footer />
+      <ConfirmDialog />
     </>
   );
 }

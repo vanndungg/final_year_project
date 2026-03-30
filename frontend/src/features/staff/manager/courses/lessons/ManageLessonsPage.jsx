@@ -6,12 +6,14 @@ import { GlobalState } from '../../../../../app/providers/GlobalState';
 import axiosClient from '../../../../../shared/api/axiosClient';
 import { toast } from 'react-toastify';
 import { getLessonTypeMeta, normalizePublishStatus } from './lessonAdminUtils';
+import { showConfirm } from '../../../../../shared/utils/confirmUtils';
 // hien thi danh sach lesson de admin/staff quan ly.
 const ManageLessons = () => {
     const params = useParams();
     const state = useContext(GlobalState);
     const [token = ''] = state?.token || [''];
     const [user] = state?.userAPI?.user || [null];
+    const [confirmDialog, setConfirmDialog] = state.confirmDialog;
     const isAdmin = Number(user?.role) === 1;
     
     const [lessons, setLessons] = useState([]);
@@ -54,16 +56,20 @@ const ManageLessons = () => {
 
     // xoa lesson va tai lai danh sach sau khi thanh cong.
     const deleteLesson = async (id) => {
-        if (window.confirm("❗ Bạn có chắc chắn muốn xóa bài học này không?")) {
-            try {
-                await axiosClient.delete(`/lessons/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                toast.success("Đã xóa bài học thành công!");
-                setCallback(!callback); // Refresh lại danh sách
-            } catch (err) {
-                toast.error(err.response?.data?.msg || "Không thể xóa bài học");
-            }
+        const confirmed = await showConfirm(setConfirmDialog, {
+            title: 'Xóa bài học',
+            message: 'Bạn có chắc chắn muốn xóa bài học này không?'
+        });
+        if (!confirmed) return;
+
+        try {
+            await axiosClient.delete(`/lessons/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success("Đã xóa bài học thành công!");
+            setCallback(!callback); // Refresh lại danh sách
+        } catch (err) {
+            toast.error(err.response?.data?.msg || "Không thể xóa bài học");
         }
     };
 

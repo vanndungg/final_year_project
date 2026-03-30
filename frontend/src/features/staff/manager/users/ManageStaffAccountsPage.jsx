@@ -3,6 +3,7 @@ import { GlobalState } from '../../../../app/providers/GlobalState';
 import axiosClient from '../../../../shared/api/axiosClient';
 import { toast } from 'react-toastify';
 import AdminPanelLayout from '../../pages/AdminPanelLayout';
+import { showConfirm } from '../../../../shared/utils/confirmUtils';
 
 const STAFF_ROLE_OPTIONS = [
     { value: 1, label: 'Admin' },
@@ -13,6 +14,7 @@ const STAFF_ROLE_OPTIONS = [
 const ManageStaffAccountsPage = () => {
     const state = useContext(GlobalState);
     const [token = ''] = state?.token || [''];
+    const [confirmDialog, setConfirmDialog] = state.confirmDialog;
     const [staffAccounts, setStaffAccounts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [callback, setCallback] = useState(false);
@@ -42,14 +44,17 @@ const ManageStaffAccountsPage = () => {
 
     const handleRoleChange = async (userId, newRole) => {
         const roleNum = Number(newRole);
-        if (window.confirm('Xác nhận cập nhật vai trò tài khoản cán bộ?')) {
-            try {
-                await axiosClient.patch(`/users/update_role/${userId}`, { role: roleNum });
-                toast.success('Cập nhật thành công!');
-                setCallback((prev) => !prev);
-            } catch (err) {
-                toast.error(err.response?.data?.msg || 'Lỗi cập nhật');
-            }
+        const confirmed = await showConfirm(setConfirmDialog, {
+            title: 'Xác nhận thay đổi vai trò',
+            message: 'Bạn có chắc chắn muốn cập nhật vai trò tài khoản cán bộ không?'
+        });
+        if (!confirmed) return;
+        try {
+            await axiosClient.patch(`/users/update_role/${userId}`, { role: roleNum });
+            toast.success('Cập nhật thành công!');
+            setCallback((prev) => !prev);
+        } catch (err) {
+            toast.error(err.response?.data?.msg || 'Lỗi cập nhật');
         }
     };
 
