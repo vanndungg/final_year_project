@@ -8,6 +8,7 @@ import Footer from '../shared/components/Footer';
 import ScrollToTop from '../shared/components/ScrollToTop';
 import Home from '../features/home/HomePage';
 import Courses from '../features/courses/CoursesPage';
+import Teachers from '../features/teachers/TeachersPage';
 import Login from '../features/account/pages/LoginPage';
 import Register from '../features/account/pages/RegisterPage';
 import Profile from '../features/account/pages/ProfilePage';
@@ -53,6 +54,7 @@ function App() {
           <Route element={<AppLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/courses" element={<Courses />} />
+            <Route path="/teachers" element={<Teachers />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/profile" element={<Profile />} />

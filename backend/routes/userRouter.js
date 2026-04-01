@@ -38,6 +38,7 @@ const authStaff = require('../middleware/authStaff');
  */
 
 // 1. Lấy thông tin cá nhân
+router.get('/public_teachers', userCtrl.getPublicTeachers);
 router.get('/infor', auth, userCtrl.getUser); 
 router.patch('/update_avatar', auth, userCtrl.updateAvatar);
 

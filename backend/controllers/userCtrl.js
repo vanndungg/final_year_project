@@ -482,6 +482,20 @@ const userCtrl = {
         }
     },
 
+    // public lay danh sach giang vien de hien thi tren website.
+    getPublicTeachers: async (req, res) => {
+        try {
+            const teachers = await Users.find({ role: 2 })
+                .select('name avatar createdAt')
+                .sort({ createdAt: -1 })
+                .lean();
+
+            return res.json(teachers);
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
     // admin cap nhat role nguoi dung.
     updateRole: async (req, res) => {
         try {

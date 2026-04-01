@@ -78,7 +78,7 @@ function Header() {
                         <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">Trang chủ</Link>
                         <Link to="/courses" className="text-sm font-medium hover:text-primary transition-colors">Khóa học</Link>
                         <Link to="/coming-soon" className="text-sm font-medium hover:text-primary transition-colors">Danh mục</Link>
-                        <Link to="/coming-soon" className="text-sm font-medium hover:text-primary transition-colors">Giảng viên</Link>
+                        <Link to="/teachers" className="text-sm font-medium hover:text-primary transition-colors">Giảng viên</Link>
                         {isStaff && (
                             <Link
                                 to={isAdmin ? '/admin/dashboard' : '/admin/courses'}

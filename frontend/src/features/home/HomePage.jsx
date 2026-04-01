@@ -47,7 +47,7 @@ const Home = () => {
                                     </p>
                                 </div>
                                 <div className="flex flex-col gap-4 sm:flex-row">
-                                    <a href="/courses" className="rounded-lg bg-primary px-8 py-4 text-center font-bold text-white transition-transform hover:scale-105">
+                                    <a href="/courses" className="rounded-lg bg-emerald-600 px-8 py-4 text-center font-bold text-white transition-transform hover:scale-105 hover:bg-emerald-700">
                                         Bắt đầu ngay
                                     </a>
                                     <button className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-8 py-4 font-bold hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800">

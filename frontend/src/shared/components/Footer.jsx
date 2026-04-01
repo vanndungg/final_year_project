@@ -39,7 +39,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-primary" to="/coming-soon">
+                <Link className="hover:text-primary" to="/teachers">
                   Giảng viên
                 </Link>
               </li>
