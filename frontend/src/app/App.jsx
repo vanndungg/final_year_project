@@ -40,7 +40,6 @@ function AppLayout() {
         <Outlet />
       </main>
       <Footer />
-      <ConfirmDialog />
     </>
   );
 }
@@ -88,6 +87,7 @@ function App() {
               <Route path="/admin/payments" element={<ManagePayments />} />
           </Route>
         </Routes>
+        <ConfirmDialog />
       </div>
     </Router>
   );
