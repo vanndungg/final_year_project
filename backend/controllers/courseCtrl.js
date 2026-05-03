@@ -134,13 +134,13 @@ const normalizeCoursePayload = (rawPayload = {}) => {
     const pricingType = normalizePricingType(rawPayload.pricingType, basePrice);
     const price = pricingType === 'free' ? 0 : basePrice;
 
-    if (!title) return { error: 'Vui lòng nhập tên khóa học.' };
-    if (!category) return { error: 'Vui lòng chọn category.' };
-    if (!description) return { error: 'Vui lòng nhập mô tả khóa học.' };
-    if (!image) return { error: 'Vui lòng cung cấp ảnh đại diện khóa học.' };
+    if (!title) return { error: 'Please enter the course title.' };
+    if (!category) return { error: 'Please select a category.' };
+    if (!description) return { error: 'Please enter the course description.' };
+    if (!image) return { error: 'Please provide a course image.' };
 
     if (pricingType === 'paid' && price <= 0) {
-        return { error: 'Khóa học trả phí cần giá lớn hơn 0 VND.' };
+        return { error: 'Paid courses need a price greater than 0 VND.' };
     }
 
     return {
@@ -269,7 +269,7 @@ const courseCtrl = {
             });
 
             if (duplicatedCourse) {
-                return res.status(400).json({ msg: 'Tên khóa học này đã tồn tại.' });
+                return res.status(400).json({ msg: 'This course name already exists.' });
             }
 
             const newCourse = await Courses.create(coursePayload);
@@ -281,7 +281,7 @@ const courseCtrl = {
             const createdLessons = await Lessons.find({ courseId: newCourse._id }).sort({ order: 1, createdAt: 1 });
 
             res.json({
-                msg: 'Đã tạo khóa học thành công!',
+                msg: 'Course created successfully!',
                 course: newCourse,
                 lessons: createdLessons
             });
@@ -399,7 +399,7 @@ const courseCtrl = {
             });
 
             if (duplicatedCourse) {
-                return res.status(400).json({ msg: 'Tên khóa học này đã tồn tại.' });
+                return res.status(400).json({ msg: 'This course name already exists.' });
             }
 
             const hasLessonsField = Object.prototype.hasOwnProperty.call(req.body, 'lessons');
@@ -427,7 +427,7 @@ const courseCtrl = {
             const updatedLessons = await Lessons.find({ courseId: req.params.id }).sort({ order: 1, createdAt: 1 });
 
             res.json({
-                msg: 'Cập nhật khóa học thành công!',
+                msg: 'Course updated successfully!',
                 course: updatedCourse,
                 lessons: updatedLessons
             });
@@ -463,7 +463,7 @@ const courseCtrl = {
                 );
             }
 
-            res.json({ msg: 'Đã xóa khóa học thành công!' });
+            res.json({ msg: 'Course deleted successfully!' });
         } catch (err) {
             return res.status(500).json({ msg: err.message });
         }

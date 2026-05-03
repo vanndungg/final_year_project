@@ -10,11 +10,11 @@ const authCtrl = {
 
             // 1. Kiểm tra xem người dùng đã tồn tại chưa
             const user = await Users.findOne({ email });
-            if (user) return res.status(400).json({ msg: "Email này đã tồn tại." });
+            if (user) return res.status(400).json({ msg: "This email already exists." });
 
             // 2. Kiểm tra độ dài mật khẩu
             if (password.length < 6)
-                return res.status(400).json({ msg: "Mật khẩu phải có ít nhất 6 ký tự." });
+                return res.status(400).json({ msg: "Password must be at least 6 characters long." });
 
             // 3. Mã hóa mật khẩu
             const passwordHash = await bcrypt.hash(password, 10);
@@ -27,7 +27,7 @@ const authCtrl = {
             // 5. Lưu vào MongoDB
             await newUser.save();
 
-            res.json({ msg: "Đăng ký thành công!" });
+            res.json({ msg: "Registration successful!" });
 
         } catch (err) {
             return res.status(500).json({ msg: err.message });
@@ -42,7 +42,7 @@ const authCtrl = {
             if (!user) return res.status(400).json({ msg: "Người dùng không tồn tại." });
 
             const isMatch = await bcrypt.compare(password, user.password);
-            if (!isMatch) return res.status(400).json({ msg: "Mật khẩu không đúng." });
+            if (!isMatch) return res.status(400).json({ msg: "Incorrect password." });
 
             // Tạo Token (Cần ACCESS_TOKEN_SECRET trong file .env)
             const access_token = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET || 'secret123', { expiresIn: '1d' });

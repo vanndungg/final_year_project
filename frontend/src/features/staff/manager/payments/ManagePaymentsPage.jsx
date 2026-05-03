@@ -1,6 +1,7 @@
 
 
 import React, { useContext, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GlobalState } from '../../../../app/providers/GlobalState';
 import axiosClient from '../../../../shared/api/axiosClient';
 import { toast } from 'react-toastify';
@@ -9,6 +10,7 @@ import AdminPanelLayout from '../../pages/AdminPanelLayout';
 const formatVnd = (value) => `${Number(value || 0).toLocaleString('vi-VN')}đ`;
 // hien thi danh sach giao dich thanh toan thanh cong.
 const ManagePayments = () => {
+    const { t } = useTranslation();
     const state = useContext(GlobalState);
     const [token = ''] = state?.token || [''];
     const [payments, setPayments] = useState([]);
@@ -26,7 +28,7 @@ const ManagePayments = () => {
                 });
                 setPayments(Array.isArray(res.data) ? res.data : []);
             } catch (err) {
-                toast.error(err.response?.data?.msg || 'Khong the tai danh sach thanh toan thanh cong.');
+                toast.error(err.response?.data?.msg || t('admin.unableReloadPayments'));
             } finally {
                 setLoading(false);
             }
@@ -45,13 +47,13 @@ const ManagePayments = () => {
             <div className="p-8 space-y-6">
                 <div className="flex items-end justify-between">
                     <div>
-                        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Successful Payments</h2>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{t('admin.successfulPayments')}</h2>
                         <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                            Theo doi cac giao dich da thanh toan thanh cong tu hoc vien.
+                            {t('admin.trackSuccessfulTransactions')}
                         </p>
                     </div>
                     <div className="text-right">
-                        <p className="text-xs uppercase tracking-wide text-slate-500">Tong doanh thu ghi nhan</p>
+                        <p className="text-xs uppercase tracking-wide text-slate-500">{t('admin.totalRevenue')}</p>
                         <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{formatVnd(totalRevenue)}</p>
                     </div>
                 </div>
@@ -61,22 +63,22 @@ const ManagePayments = () => {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Thoi gian</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Hoc vien</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Khoa hoc</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Gateway</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ma giao dich</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">So tien</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.time')}</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.student')}</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.course')}</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.gateway')}</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.transactionId')}</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">{t('admin.amount')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan="6" className="px-6 py-16 text-center text-slate-500 dark:text-slate-400">Dang tai du lieu...</td>
+                                        <td colSpan="6" className="px-6 py-16 text-center text-slate-500 dark:text-slate-400">{t('admin.loadingData')}</td>
                                     </tr>
                                 ) : payments.length === 0 ? (
                                     <tr>
-                                        <td colSpan="6" className="px-6 py-16 text-center text-slate-500 dark:text-slate-400">Chua co giao dich thanh cong nao.</td>
+                                        <td colSpan="6" className="px-6 py-16 text-center text-slate-500 dark:text-slate-400">{t('admin.noSuccessfulPayments')}</td>
                                     </tr>
                                 ) : (
                                     payments.map((payment) => (
@@ -85,7 +87,7 @@ const ManagePayments = () => {
                                                 {payment.paidAt ? new Date(payment.paidAt).toLocaleString('vi-VN') : '-'}
                                             </td>
                                             <td className="px-6 py-4">
-                                                <p className="text-sm font-semibold text-slate-900 dark:text-white">{payment.name || 'Hoc vien'}</p>
+                                                <p className="text-sm font-semibold text-slate-900 dark:text-white">{payment.name || t('admin.student')}</p>
                                                 <p className="text-xs text-slate-500">{payment.email || '-'}</p>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300">
@@ -93,7 +95,7 @@ const ManagePayments = () => {
                                                     ? payment.courseItems.map((item) => item?.title).filter(Boolean).join(', ')
                                                     : '-'}
                                             </td>
-                                            <td className="px-6 py-4 text-sm font-semibold text-blue-600 dark:text-blue-400">{payment.gateway || 'N/A'}</td>
+                                            <td className="px-6 py-4 text-sm font-semibold text-blue-600 dark:text-blue-400">{payment.gateway || t('common.na')}</td>
                                             <td className="px-6 py-4 text-xs text-slate-600 dark:text-slate-400">
                                                 <p className="font-mono">{payment.paymentCode || payment.paymentID || '-'}</p>
                                                 <p className="font-mono">{payment.referenceCode || '-'}</p>

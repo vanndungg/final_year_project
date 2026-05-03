@@ -1,25 +1,37 @@
 import React, { useState, useEffect, useContext, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GlobalState } from '../../../../app/providers/GlobalState';
 import axiosClient from '../../../../shared/api/axiosClient';
 import { toast } from 'react-toastify';
 import AdminPanelLayout from '../../pages/AdminPanelLayout';
 import { showConfirm } from '../../../../shared/utils/confirmUtils';
 
-const STAFF_ROLE_OPTIONS = [
-    { value: 1, label: 'Admin' },
-    { value: 2, label: 'Giáo viên' }
-];
-
 // trang quan ly tai khoan can bo (chi admin).
 const ManageStaffAccountsPage = () => {
+    const { t } = useTranslation();
     const state = useContext(GlobalState);
     const [token = ''] = state?.token || [''];
+    const [user] = state?.userAPI?.user || [null];
+    const isAdmin = Number(user?.role) === 1;
     const [confirmDialog, setConfirmDialog] = state.confirmDialog;
     const [staffAccounts, setStaffAccounts] = useState([]);
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [createLoading, setCreateLoading] = useState(false);
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        role: 2
+    });
+
+    const STAFF_ROLE_OPTIONS = [
+        { value: 1, label: t('header.admin') },
+        { value: 2, label: t('header.teacher') }
+    ];
     const [loading, setLoading] = useState(false);
     const [callback, setCallback] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [roleFilter, setRoleFilter] = useState('All Roles');
+    const [roleFilter, setRoleFilter] = useState('all');
 
     useEffect(() => {
         const getStaffAccounts = async () => {
@@ -34,7 +46,7 @@ const ManageStaffAccountsPage = () => {
 
                 setStaffAccounts(staffs);
             } catch (err) {
-                toast.error(err.response?.data?.msg || 'Lỗi tải dữ liệu');
+                toast.error(err.response?.data?.msg || t('admin.loadingError'));
             }
             setLoading(false);
         };
@@ -45,16 +57,64 @@ const ManageStaffAccountsPage = () => {
     const handleRoleChange = async (userId, newRole) => {
         const roleNum = Number(newRole);
         const confirmed = await showConfirm(setConfirmDialog, {
-            title: 'Xác nhận thay đổi vai trò',
-            message: 'Bạn có chắc chắn muốn cập nhật vai trò tài khoản cán bộ không?'
+            title: t('admin.confirmRoleChange'),
+            message: t('admin.roleChangeMessage')
         });
         if (!confirmed) return;
         try {
             await axiosClient.patch(`/users/update_role/${userId}`, { role: roleNum });
-            toast.success('Cập nhật thành công!');
+            toast.success(t('admin.updateSuccessful'));
             setCallback((prev) => !prev);
         } catch (err) {
-            toast.error(err.response?.data?.msg || 'Lỗi cập nhật');
+            toast.error(err.response?.data?.msg || t('admin.updateError'));
+        }
+    };
+
+    const handleCreateUser = async (e) => {
+        e.preventDefault();
+        
+        if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim()) {
+            toast.error(t('admin.requiredFields'));
+            return;
+        }
+
+        if (formData.password.length < 6) {
+            toast.error(t('admin.passwordMinLength'));
+            return;
+        }
+
+        setCreateLoading(true);
+        try {
+            await axiosClient.post('/users/create_user', {
+                name: formData.name,
+                email: formData.email,
+                password: formData.password,
+                role: Number(formData.role)
+            });
+            toast.success(t('admin.createStaffSuccess'));
+            setFormData({ name: '', email: '', password: '', role: 2 });
+            setShowCreateForm(false);
+            setCallback((prev) => !prev);
+        } catch (err) {
+            toast.error(err.response?.data?.msg || t('admin.createError'));
+        } finally {
+            setCreateLoading(false);
+        }
+    };
+
+    const handleDeleteStaff = async (staffId) => {
+        const confirmed = await showConfirm(setConfirmDialog, {
+            title: t('admin.confirmDelete'),
+            message: t('admin.deleteStaffMessage')
+        });
+        if (!confirmed) return;
+
+        try {
+            await axiosClient.delete(`/users/delete_user/${staffId}`);
+            toast.success(t('admin.deleteStaffSuccess'));
+            setCallback((prev) => !prev);
+        } catch (err) {
+            toast.error(err.response?.data?.msg || t('admin.deleteError'));
         }
     };
 
@@ -65,7 +125,7 @@ const ManageStaffAccountsPage = () => {
             const name = item?.name?.toLowerCase() || '';
             const email = item?.email?.toLowerCase() || '';
             const role = Number(item?.role);
-            const roleName = role === 1 ? 'Admin' : 'Teacher';
+            const roleName = role === 1 ? t('header.admin') : t('header.teacher');
 
             const matchesSearch =
                 name.includes(normalizedSearch) ||
@@ -73,9 +133,9 @@ const ManageStaffAccountsPage = () => {
                 roleName.toLowerCase().includes(normalizedSearch);
 
             const matchesRole =
-                roleFilter === 'All Roles' ||
-                (roleFilter === 'Admin' && role === 1) ||
-                (roleFilter === 'Teacher' && role === 2);
+                roleFilter === 'all' ||
+                (roleFilter === 'admin' && role === 1) ||
+                (roleFilter === 'teacher' && role === 2);
 
             return matchesSearch && matchesRole;
         });
@@ -88,22 +148,100 @@ const ManageStaffAccountsPage = () => {
     return (
         <AdminPanelLayout>
             <div className="p-8 space-y-8">
-                <div>
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Staff Accounts</h2>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Quan ly tai khoan can bo va phan quyen Admin/Giao vien.</p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{t('admin.staffAccounts')}</h2>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{t('admin.staffAccountsDescription')}</p>
+                    </div>
+                    {isAdmin && (
+                        <button
+                            onClick={() => setShowCreateForm(true)}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-all shadow-lg shadow-green-600/20"
+                        >
+                            <span className="material-symbols-outlined text-xl">add</span>
+                            {t('admin.addAccount')}
+                        </button>
+                    )}
                 </div>
+
+                {/* Form tạo tài khoản */}
+                {showCreateForm && (
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">{t('admin.addStaffAccount')}</h3>
+                        <form onSubmit={handleCreateUser} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t('admin.fullName')}</label>
+                                <input
+                                    type="text"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    placeholder={t('admin.enterFullName')}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t('common.email')}</label>
+                                <input
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    placeholder={t('admin.enterEmail')}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t('admin.password')}</label>
+                                <input
+                                    type="password"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    placeholder={t('admin.enterPassword')}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t('admin.role')}</label>
+                                <select
+                                    value={formData.role}
+                                    onChange={(e) => setFormData({ ...formData, role: Number(e.target.value) })}
+                                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                >
+                                    {STAFF_ROLE_OPTIONS.map((option) => (
+                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    type="submit"
+                                    disabled={createLoading}
+                                    className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                                >
+                                    {createLoading ? t('common.loading') : t('admin.create')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCreateForm(false)}
+                                    className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                                >
+                                    {t('common.cancel')}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Staff</p>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{t('admin.totalStaff')}</p>
                         <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalStaff}</p>
                     </div>
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Admins</p>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{t('admin.admins')}</p>
                         <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{adminCount}</p>
                     </div>
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Teachers</p>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{t('admin.teachers')}</p>
                         <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{teacherCount}</p>
                     </div>
                 </div>
@@ -113,7 +251,7 @@ const ManageStaffAccountsPage = () => {
                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
                         <input
                             className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all"
-                            placeholder="Search by name or email..."
+                            placeholder={t('admin.searchByNameEmail')}
                             type="text"
                             value={searchTerm}
                             onChange={(event) => setSearchTerm(event.target.value)}
@@ -124,9 +262,9 @@ const ManageStaffAccountsPage = () => {
                         value={roleFilter}
                         onChange={(event) => setRoleFilter(event.target.value)}
                     >
-                        <option>All Roles</option>
-                        <option>Admin</option>
-                        <option>Teacher</option>
+                        <option value="all">{t('admin.allRoles')}</option>
+                        <option value="admin">{t('header.admin')}</option>
+                        <option value="teacher">{t('header.teacher')}</option>
                     </select>
                 </div>
 
@@ -135,16 +273,17 @@ const ManageStaffAccountsPage = () => {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Account</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Email</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Role</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Joined Date</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.account')}</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('header.email')}</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('profile.role')}</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('profile.joinDate')}</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">{t('common.actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan="4" className="px-6 py-20 text-center text-slate-500 dark:text-slate-400">Loading staff accounts...</td>
+                                        <td colSpan="4" className="px-6 py-20 text-center text-slate-500 dark:text-slate-400">{t('common.loading')}</td>
                                     </tr>
                                 ) : filteredStaffAccounts.map((item) => (
                                     <tr key={item._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
@@ -155,7 +294,7 @@ const ManageStaffAccountsPage = () => {
                                                 </div>
                                                 <div className="max-w-[220px]">
                                                     <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{item.name}</p>
-                                                    <p className="text-xs text-slate-500 truncate">ID: {item._id}</p>
+                                                    <p className="text-xs text-slate-500 truncate">{t('admin.idLabel')}: {item._id}</p>
                                                 </div>
                                             </div>
                                         </td>
@@ -172,6 +311,15 @@ const ManageStaffAccountsPage = () => {
                                             </select>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{new Date(item.createdAt).toLocaleDateString()}</td>
+                                        <td className="px-6 py-4 text-right">
+                                            <button
+                                                onClick={() => handleDeleteStaff(item._id)}
+                                                className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                                                title="Xóa"
+                                            >
+                                                <span className="material-symbols-outlined text-[20px]">delete</span>
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -179,7 +327,7 @@ const ManageStaffAccountsPage = () => {
                     </div>
                     <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800">
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Showing <span className="font-bold text-slate-900 dark:text-white">{filteredStaffAccounts.length}</span> of <span className="font-bold text-slate-900 dark:text-white">{totalStaff}</span> staff accounts
+                            {t('admin.showingStaffAccounts', { shown: filteredStaffAccounts.length, total: totalStaff })}
                         </p>
                     </div>
                 </div>

@@ -1,13 +1,38 @@
 
 
-import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useContext, useEffect, useMemo } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
+import { GlobalState } from '../../app/providers/GlobalState';
+import { getStudentCount } from '../../shared/utils/courseDataUtils';
+
+const formatPrice = (value) => {
+    const numericValue = Number(value || 0);
+    if (numericValue <= 0) return 'Free';
+    return `${numericValue.toLocaleString('vi-VN')}đ`;
+};
+
+const renderStars = (ratingValue) => {
+    const normalizedRating = Math.max(0, Math.min(5, Number(ratingValue || 0)));
+
+    return Array.from({ length: 5 }).map((_, index) => (
+        <span
+            key={index}
+            className={`material-symbols-outlined text-[16px] ${index < Math.round(normalizedRating) ? 'fill text-amber-500' : 'text-slate-300 dark:text-slate-600'}`}
+        >
+            star
+        </span>
+    ));
+};
+
 // hien thi trang chu va xu ly thong bao sau khi thanh toan.
 const Home = () => {
+    const { t, i18n } = useTranslation();
+    const state = useContext(GlobalState);
     const location = useLocation();
     const navigate = useNavigate();
+    const [courses = []] = state?.coursesAPI?.courses || [[]];
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -16,11 +41,11 @@ const Home = () => {
         if (!gatewayResult) return;
 
         if (gatewayResult === 'success') {
-            toast.success('Thanh toán thành công. Bạn đã sở hữu khóa học và có thể bắt đầu học ngay.');
+            toast.success(t('payment.paymentSuccessful'));
         } else if (gatewayResult === 'cancel') {
-            toast.warn('Bạn đã hủy thanh toán trên VNPAY.');
+            toast.warn('You have cancelled the payment on VNPAY.');
         } else {
-            toast.error('Thanh toán chưa thành công. Vui lòng thử lại.');
+            toast.error(t('errors.serverError'));
         }
 
         const cleaned = new URLSearchParams(location.search);
@@ -30,6 +55,38 @@ const Home = () => {
         navigate(next ? `/?${next}` : '/', { replace: true });
     }, [location.search, navigate]);
 
+    const publishedCourses = useMemo(() => {
+        return (Array.isArray(courses) ? courses : []).filter((course) => {
+            const status = String(course?.status || 'publish').toLowerCase();
+            return status !== 'draft';
+        });
+    }, [courses]);
+
+    const popularCourses = useMemo(() => {
+        return [...publishedCourses]
+            .sort((leftCourse, rightCourse) => {
+                const leftScore = (Number(leftCourse?.avgRating || 0) * 1000) + (Number(leftCourse?.totalReviews || 0) * 10) + getStudentCount(leftCourse);
+                const rightScore = (Number(rightCourse?.avgRating || 0) * 1000) + (Number(rightCourse?.totalReviews || 0) * 10) + getStudentCount(rightCourse);
+                return rightScore - leftScore;
+            })
+            .slice(0, 4);
+    }, [publishedCourses]);
+
+    const homeStats = useMemo(() => {
+        const freeCourses = publishedCourses.filter((course) => Number(course?.price || 0) === 0).length;
+        const totalStudents = publishedCourses.reduce((sum, course) => sum + getStudentCount(course), 0);
+
+        return {
+            totalCourses: publishedCourses.length,
+            freeCourses,
+            totalStudents
+        };
+    }, [publishedCourses]);
+
+    const scrollToPopularCourses = () => {
+        document.getElementById('home-popular-courses')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
     return (
         <div className="relative flex min-h-screen flex-col overflow-x-hidden">
             <main className="flex-1">
@@ -38,21 +95,21 @@ const Home = () => {
                         <div className="grid items-center gap-12 lg:grid-cols-2">
                             <div className="flex flex-col gap-8">
                                 <div className="space-y-4">
-                                    <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary">Nền tảng học tập số 1</span>
+                                    <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary">{t('home.badge')}</span>
                                     <h2 className="text-4xl font-black leading-tight tracking-tight text-slate-900 dark:text-white md:text-5xl lg:text-6xl">
-                                        Học kỹ năng mới trực tuyến cùng các <span className="text-primary">chuyên gia</span> hàng đầu
+                                        {t('home.title')}
                                     </h2>
                                     <p className="max-w-xl text-lg text-slate-600 dark:text-slate-400">
-                                        Khám phá hàng ngàn khóa học chất lượng cao giúp bạn nâng tầm sự nghiệp và phát triển bản thân mỗi ngày với chi phí tối ưu nhất.
+                                        {t('home.subtitle')}
                                     </p>
                                 </div>
                                 <div className="flex flex-col gap-4 sm:flex-row">
-                                    <a href="/courses" className="rounded-lg bg-emerald-600 px-8 py-4 text-center font-bold text-white transition-transform hover:scale-105 hover:bg-emerald-700">
-                                        Bắt đầu ngay
-                                    </a>
-                                    <button className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-8 py-4 font-bold hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800">
+                                    <Link to="/courses" className="rounded-lg bg-emerald-600 px-8 py-4 text-center font-bold text-white transition-transform hover:scale-105 hover:bg-emerald-700">
+                                        {t('home.exploreButton')}
+                                    </Link>
+                                    <button onClick={scrollToPopularCourses} className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-8 py-4 font-bold hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800">
                                         <span className="material-symbols-outlined">play_circle</span>
-                                        Xem hướng dẫn
+                                        {t('home.viewFeatured')}
                                     </button>
                                 </div>
                             </div>
@@ -65,234 +122,86 @@ const Home = () => {
                         </div>
                     </div>
                 </section>
-                <section className="bg-slate-50 dark:bg-slate-900/50 py-16">
+                <section id="home-popular-courses" className="py-16">
                     <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
                         <div className="flex items-center justify-between mb-10">
-                            <h3 className="text-2xl font-bold tracking-tight">Danh mục nổi bật</h3>
-                            <a className="text-sm font-bold text-primary hover:underline" href="/courses">Xem tất cả</a>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                            <div className="group flex flex-col items-center gap-4 rounded-xl border border-slate-200 bg-white p-6 transition-all hover:border-primary hover:shadow-lg dark:border-slate-800 dark:bg-background-dark">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                                    <span className="material-symbols-outlined">code</span>
-                                </div>
-                                <span className="font-bold">Lập trình</span>
-                            </div>
-                            <div className="group flex flex-col items-center gap-4 rounded-xl border border-slate-200 bg-white p-6 transition-all hover:border-primary hover:shadow-lg dark:border-slate-800 dark:bg-background-dark">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                                    <span className="material-symbols-outlined">palette</span>
-                                </div>
-                                <span className="font-bold">Thiết kế</span>
-                            </div>
-                            <div className="group flex flex-col items-center gap-4 rounded-xl border border-slate-200 bg-white p-6 transition-all hover:border-primary hover:shadow-lg dark:border-slate-800 dark:bg-background-dark">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                                    <span className="material-symbols-outlined">business_center</span>
-                                </div>
-                                <span className="font-bold">Kinh doanh</span>
-                            </div>
-                            <div className="group flex flex-col items-center gap-4 rounded-xl border border-slate-200 bg-white p-6 transition-all hover:border-primary hover:shadow-lg dark:border-slate-800 dark:bg-background-dark">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                                    <span className="material-symbols-outlined">campaign</span>
-                                </div>
-                                <span className="font-bold">Marketing</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-                <section className="py-16">
-                    <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
-                        <div className="flex items-center justify-between mb-10">
-                            <h3 className="text-2xl font-bold tracking-tight">Khóa học phổ biến</h3>
-                            <div className="flex gap-2">
-                                <button className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:bg-slate-100">
-                                    <span className="material-symbols-outlined">chevron_left</span>
-                                </button>
-                                <button className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 hover:bg-slate-100">
-                                    <span className="material-symbols-outlined">chevron_right</span>
-                                </button>
-                            </div>
+                            <h3 className="text-2xl font-bold tracking-tight">{t('home.popularCourses')}</h3>
+                            <Link to="/courses" className="text-sm font-bold text-primary hover:underline">{t('home.viewAll')}</Link>
                         </div>
                         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                            <div className="group overflow-hidden rounded-xl border border-slate-200 bg-white transition-all hover:shadow-xl dark:border-slate-800 dark:bg-background-dark">
-                                <div className="relative aspect-video overflow-hidden">
-                                    <img alt="Web Development" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110" data-alt="Giao diện lập trình web hiện đại" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNs1PGWKPiIli2W_y1F2-oDywACvm9K-LGrInXzLMgIDxxc71iDWoLAXa8DmP26J10yuyL8DJ6y0rXtfk_QvJ12_48To7oMeFHuBvcrTBgXeTZITMOVcf0IVlcEI2dqrup3RH8agpPJl2ks3sqMRVvy6iVTaUr4flhiwLZQG_bE9V6oZEBsSoONAEjveP0m9PkhqbAWcMoHTJKX57yDUPno_Ohn7wPXhnkFCWvFgUNlelg1spILofNTjMiZ4efh0y_9OS16IjSMcmW"/>
-                                    <span className="absolute right-2 top-2 rounded bg-white/90 px-2 py-1 text-xs font-bold dark:bg-background-dark/90">Bán chạy</span>
-                                </div>
-                                <div className="p-4">
-                                    <span className="text-xs font-semibold text-primary uppercase">Development</span>
-                                    <h4 className="mt-2 font-bold line-clamp-2">Lập trình Web Fullstack với React &amp; Node.js</h4>
-                                    <div className="mt-2 flex items-center gap-1">
-                                        <span className="text-sm font-bold text-amber-500">4.8</span>
-                                        <div className="flex text-amber-500">
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm">star</span>
+                            {popularCourses.length > 0 ? popularCourses.map((course, index) => (
+                                <Link key={course._id} to={`/detail/${course._id}`} className="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-all hover:-translate-y-1 hover:shadow-xl dark:border-slate-800 dark:bg-background-dark">
+                                    <div className="relative aspect-video overflow-hidden">
+                                        <img alt={course.title || 'Course'} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110" src={course.image?.url || course.image} />
+                                        <span className="absolute right-2 top-2 rounded bg-white/90 px-2 py-1 text-xs font-bold dark:bg-background-dark/90">Top {index + 1}</span>
+                                    </div>
+                                    <div className="flex flex-1 flex-col p-4">
+                                        <span className="text-xs font-semibold text-primary uppercase">{course.category || 'General'}</span>
+                                        <h4 className="mt-2 font-bold line-clamp-2 text-slate-900 dark:text-white">{course.title}</h4>
+                                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{course.teacher || 'EduLearn Team'}</p>
+                                        <div className="mt-2 flex items-center gap-1">
+                                            <span className="text-sm font-bold text-amber-500">{Number(course.avgRating || 0).toFixed(1)}</span>
+                                            <div className="flex text-amber-500">
+                                                {renderStars(course.avgRating)}
+                                            </div>
+                                            <span className="text-xs text-slate-500">({Number(course.totalReviews || 0)})</span>
                                         </div>
-                                        <span className="text-xs text-slate-500">(1,240)</span>
-                                    </div>
-                                    <div className="mt-4 flex items-center justify-between">
-                                        <span className="text-lg font-black text-primary">499.000đ</span>
-                                        <span className="text-sm text-slate-400 line-through">1.200.000đ</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="group overflow-hidden rounded-xl border border-slate-200 bg-white transition-all hover:shadow-xl dark:border-slate-800 dark:bg-background-dark">
-                                <div className="relative aspect-video overflow-hidden">
-                                    <img alt="UI UX Design" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110" data-alt="Thiết kế UI/UX trên máy tính" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2si_woEPRxALfjn8IhEw5YBnyADolgC4NtaoZu11E8frXP1KO552vjufP1jZlILU5yiagvzOoPmNK5dgOvUrriY747lyr8bfFvV285KEKxMGoxGvVAG1P4Cyk1syDQyJGl2JKh9DYvdLqpwbEd4GWW6CjMeHoJebcCFYSGS5k_Xy2SraMccO8PdY-W3uhYO2x2O1Jh-72IEq7Bs0_5Mk6M3nDlWPK94fDxoaaCI-L87BjTP4pemIoD4YJi9y9HgM0Zcv46EXZwjdG"/>
-                                </div>
-                                <div className="p-4">
-                                    <span className="text-xs font-semibold text-primary uppercase">Design</span>
-                                    <h4 className="mt-2 font-bold line-clamp-2">Khóa học thiết kế UI/UX cơ bản đến nâng cao</h4>
-                                    <div className="mt-2 flex items-center gap-1">
-                                        <span className="text-sm font-bold text-amber-500">4.9</span>
-                                        <div className="flex text-amber-500">
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
+                                        <div className="mt-3 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                                            <span className="inline-flex items-center gap-1">
+                                                <span className="material-symbols-outlined text-[16px]">group</span>
+                                                {getStudentCount(course).toLocaleString(i18n.language === 'vi' ? 'vi-VN' : 'en-US')} {t('home.students')}
+                                            </span>
                                         </div>
-                                        <span className="text-xs text-slate-500">(850)</span>
-                                    </div>
-                                    <div className="mt-4 flex items-center justify-between">
-                                        <span className="text-lg font-black text-primary">399.000đ</span>
-                                        <span className="text-sm text-slate-400 line-through">950.000đ</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="group overflow-hidden rounded-xl border border-slate-200 bg-white transition-all hover:shadow-xl dark:border-slate-800 dark:bg-background-dark">
-                                <div className="relative aspect-video overflow-hidden">
-                                    <img alt="Digital Marketing" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110" data-alt="Biểu đồ marketing và tăng trưởng" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACQnBXckodBnGeUc6hoL6wF12yNfMjgoBqjWX980RDu3TZZ5pisphebibxsoqLocQivG5wqppsdITeUUE6gcc6HsNB7MrosgC3IkHPSWscs5hrqNRrFZlZ_zrlXYxeOAoO0Vg4BxVFqXgTFMcjUqZ6GOIVJjtUXq73x-umaEv-JDGeX9FJe38OmSNN9YJ9-7cl1WmZJIcDvuovFOwC3mkY_NcxUnA2IbjLamtcmMo2eKbrAzCIF4A_PW6pMansnt2Op9myP_xe4OjL"/>
-                                </div>
-                                <div className="p-4">
-                                    <span className="text-xs font-semibold text-primary uppercase">Marketing</span>
-                                    <h4 className="mt-2 font-bold line-clamp-2">Digital Marketing toàn diện cho người mới</h4>
-                                    <div className="mt-2 flex items-center gap-1">
-                                        <span className="text-sm font-bold text-amber-500">4.7</span>
-                                        <div className="flex text-amber-500">
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm">star</span>
+                                        <div className="mt-auto flex items-center justify-between pt-5">
+                                            <span className="text-lg font-black text-primary">{formatPrice(course.price)}</span>
+                                            <span className="text-sm font-semibold text-emerald-600">{t('home.viewDetails')}</span>
                                         </div>
-                                        <span className="text-xs text-slate-500">(2,100)</span>
                                     </div>
-                                    <div className="mt-4 flex items-center justify-between">
-                                        <span className="text-lg font-black text-primary">Miễn phí</span>
-                                        <span className="text-sm text-slate-400 line-through">450.000đ</span>
-                                    </div>
+                                </Link>
+                            )) : (
+                                <div className="col-span-full rounded-xl border border-dashed border-slate-300 px-6 py-16 text-center text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                    {t('courses.noResults')}
                                 </div>
-                            </div>
-                            <div className="group overflow-hidden rounded-xl border border-slate-200 bg-white transition-all hover:shadow-xl dark:border-slate-800 dark:bg-background-dark">
-                                <div className="relative aspect-video overflow-hidden">
-                                    <img alt="Finance" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110" data-alt="Quản lý tài chính cá nhân" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLqR8vh3ckm_oQYuFUw08LPQPEeSMEBTzgbBBxvEgFM8E92ohNGi8OMeBnsFM5q9sruJcj1inKHtm7TkE17YxdgfUWelOvFHFi4kxWkmtrFe5H-GRvRZJ1AvjJpf0H9YmjiWhFbFAUVn0-iqHHq7YvXcJTbu31w3SDcT5O9_0A3xsX6CIwf9ecMAgwwl4VaW6Vn3xZwZ6UK-ZYZsYaqgGPoi6-vRaRye6XxVRwDCpSbGzrAy4Rd9D6a78qtARPp7N4h-hGEt8WsJzh"/>
-                                </div>
-                                <div className="p-4">
-                                    <span className="text-xs font-semibold text-primary uppercase">Business</span>
-                                    <h4 className="mt-2 font-bold line-clamp-2">Quản trị tài chính cá nhân thông minh</h4>
-                                    <div className="mt-2 flex items-center gap-1">
-                                        <span className="text-sm font-bold text-amber-500">4.6</span>
-                                        <div className="flex text-amber-500">
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm fill-1">star</span>
-                                            <span className="material-symbols-outlined text-sm">star</span>
-                                        </div>
-                                        <span className="text-xs text-slate-500">(540)</span>
-                                    </div>
-                                    <div className="mt-4 flex items-center justify-between">
-                                        <span className="text-lg font-black text-primary">299.000đ</span>
-                                        <span className="text-sm text-slate-400 line-through">600.000đ</span>
-                                    </div>
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 </section>
-                <section className="bg-primary py-16 text-white">
+                <section className="bg-slate-50 py-16 dark:bg-slate-900/50">
                     <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
-                        <div className="grid gap-8 text-center md:grid-cols-3">
-                            <div className="space-y-2">
-                                <p className="text-4xl font-black md:text-5xl">10,000+</p>
-                                <p className="text-lg font-medium opacity-90">Khóa học chuyên sâu</p>
-                            </div>
-                            <div className="space-y-2">
-                                <p className="text-4xl font-black md:text-5xl">50,000+</p>
-                                <p className="text-lg font-medium opacity-90">Học viên tin tưởng</p>
-                            </div>
-                            <div className="space-y-2">
-                                <p className="text-4xl font-black md:text-5xl">500+</p>
-                                <p className="text-lg font-medium opacity-90">Giảng viên uy tín</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-                <section className="py-16 bg-slate-50 dark:bg-slate-900/50">
-                    <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
-                        <div className="text-center mb-16">
-                            <h3 className="text-3xl font-bold tracking-tight">Học viên nói gì về chúng tôi</h3>
-                            <p className="mt-4 text-slate-600 dark:text-slate-400">Hàng ngàn câu chuyện thành công bắt đầu từ đây</p>
-                        </div>
-                        <div className="grid gap-8 md:grid-cols-3">
-                            <div className="rounded-2xl bg-white p-8 shadow-sm dark:bg-background-dark border border-slate-100 dark:border-slate-800">
-                                <div className="flex items-center gap-1 text-amber-500 mb-4">
-                                    <span className="material-symbols-outlined fill-1">star</span>
-                                    <span className="material-symbols-outlined fill-1">star</span>
-                                    <span className="material-symbols-outlined fill-1">star</span>
-                                    <span className="material-symbols-outlined fill-1">star</span>
-                                    <span className="material-symbols-outlined fill-1">star</span>
-                                </div>
-                                <p className="text-slate-600 dark:text-slate-400 italic mb-6">"Khóa học lập trình web ở đây thực sự rất chất lượng. Lộ trình bài bản, dễ hiểu ngay cả với người chưa biết gì."</p>
-                                <div className="flex items-center gap-4">
-                                    <div className="h-12 w-12 rounded-full bg-slate-200 overflow-hidden">
-                                        <img alt="User 1" className="h-full w-full object-cover" data-alt="Chân dung học viên nam" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAd6bmMfRqX6cwLokm_8qah6mojfAWFs8JDKEHqVdT6piC_olFmOMUxsavvtS3_An8zj2GLM4dnmw8HqfFFwb0JLjWZauerH1rZ47qS4xVr2fjhyJcatWz5e3ghbokYRraqpOnVXUsZ5QcFPOKHSwzWobqstCrozku2CUoF_sozxKEdmh_I5szhRmvYmp7yIVEDd1av5l1mx4L8fnIHnaC_OKiS8WXYFQHVMu9AhW7lDDSaCSDuqfQQA0wv6VrwEisJiXhz2oj7jzFd"/>
-                                    </div>
-                                    <div>
-                                        <p className="font-bold">Minh Tuấn</p>
-                                        <p className="text-xs text-slate-500">Frontend Developer</p>
-                                    </div>
+                        <div className="grid items-start gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+                            <div className="rounded-3xl bg-slate-950 p-8 text-white shadow-xl shadow-slate-900/10">
+                                <p className="text-sm font-bold uppercase tracking-[0.24em] text-emerald-300">{t('home.whyEduLearn')}</p>
+                                <h3 className="mt-4 text-3xl font-black leading-tight">{t('home.featureTitle')}</h3>
+                                <p className="mt-4 max-w-2xl text-sm leading-7 text-white/75">
+                                    {t('home.featureDescription')}
+                                </p>
+                                <div className="mt-8 flex flex-wrap gap-3">
+                                    <Link to="/courses" className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-bold text-emerald-700 transition-colors hover:bg-emerald-50">
+                                        <span className="material-symbols-outlined text-[20px]">menu_book</span>
+                                        {t('courses.title')}
+                                    </Link>
+                                    <Link to="/teachers" className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-5 py-3 font-bold text-white transition-colors hover:bg-white/10">
+                                        <span className="material-symbols-outlined text-[20px]">co_present</span>
+                                        {t('home.instructors')}
+                                    </Link>
                                 </div>
                             </div>
-                            <div className="rounded-2xl bg-white p-8 shadow-sm dark:bg-background-dark border border-slate-100 dark:border-slate-800">
-                                <div className="flex items-center gap-1 text-amber-500 mb-4">
-                                    <span className="material-symbols-outlined fill-1">star</span>
-                                    <span className="material-symbols-outlined fill-1">star</span>
-                                    <span className="material-symbols-outlined fill-1">star</span>
-                                    <span className="material-symbols-outlined fill-1">star</span>
-                                    <span className="material-symbols-outlined fill-1">star</span>
+
+                            <div className="grid self-start gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+                                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-background-dark">
+                                    <p className="text-sm font-bold uppercase tracking-[0.18em] text-slate-400">{t('home.publicCoursesTitle')}</p>
+                                    <p className="mt-3 text-4xl font-black text-slate-900 dark:text-white">{homeStats.totalCourses}</p>
+                                    <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">{t('home.publicCoursesDescription')}</p>
                                 </div>
-                                <p className="text-slate-600 dark:text-slate-400 italic mb-6">"Tôi đã thay đổi hoàn toàn tư duy thiết kế sau khi học khóa UI/UX. Cảm ơn đội ngũ giảng viên rất nhiều!"</p>
-                                <div className="flex items-center gap-4">
-                                    <div className="h-12 w-12 rounded-full bg-slate-200 overflow-hidden">
-                                        <img alt="User 2" className="h-full w-full object-cover" data-alt="Chân dung học viên nữ" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbC9jBt-f3DgL6OIr4Z4_8-7_OMDJwoKthJNbuvYyztCdPXXbS7_8TTjFYf5C87zJiKyynJt4Oej6pt6bkfIloPDi8QbqEgvsHpthHIUgrdPQq9iGnM9ChYtSxUQIXUg7t077T5xsyXzd6hAt-Ddn4_fkbeTooD8yEY82E_QxhZZr39JW6uzjXOzJIHZtv_OFuVGBmCF8UUsi1IEB8EOqpHCDA3sqANHfqqTxu6AOgK3EApDTgeblGKs6_0qoe9ltxrS2Bo5o-HxD0"/>
-                                    </div>
-                                    <div>
-                                        <p className="font-bold">Linh Chi</p>
-                                        <p className="text-xs text-slate-500">UI/UX Designer</p>
-                                    </div>
+                                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-background-dark">
+                                    <p className="text-sm font-bold uppercase tracking-[0.18em] text-slate-400">{t('home.freeCoursesTitle')}</p>
+                                    <p className="mt-3 text-4xl font-black text-slate-900 dark:text-white">{homeStats.freeCourses}</p>
+                                    <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">{t('home.freeCoursesDescription')}</p>
                                 </div>
-                            </div>
-                            <div className="rounded-2xl bg-white p-8 shadow-sm dark:bg-background-dark border border-slate-100 dark:border-slate-800">
-                                <div className="flex items-center gap-1 text-amber-500 mb-4">
-                                    <span className="material-symbols-outlined fill-1">star</span>
-                                    <span className="material-symbols-outlined fill-1">star</span>
-                                    <span className="material-symbols-outlined fill-1">star</span>
-                                    <span className="material-symbols-outlined fill-1">star</span>
-                                    <span className="material-symbols-outlined fill-1">star</span>
-                                </div>
-                                <p className="text-slate-600 dark:text-slate-400 italic mb-6">"Học phí rất hợp lý so với kiến thức nhận được. Nền tảng học tập mượt mà, hỗ trợ tận tình 24/7."</p>
-                                <div className="flex items-center gap-4">
-                                    <div className="h-12 w-12 rounded-full bg-slate-200 overflow-hidden">
-                                        <img alt="User 3" className="h-full w-full object-cover" data-alt="Chân dung học viên nam văn phòng" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnhwMNlbMflQ6Nq4S0lQI7kZk7est1DV6gD0nAj818vpeZDTchrhYVjJq-xMw2lFOu2faAkB5I8Dk8Rco7fgTNUk414BW7LdvrsoBd_5bnaxqhYe-SN7U0nvTR7thyzlkmuZVk3-lCzbbeB-EknN0WluseBClDk1m617bRWtTTJJ4u-wZ2eTMQ0pYK6PDfmeRhZnuOB0G0YWqcg5qRhECICL236fTa-0yGnYI-k85bnvDI70daz5HlT21A8sZZx0d9Fardbwpgu5Yv"/>
-                                    </div>
-                                    <div>
-                                        <p className="font-bold">Hoàng Nam</p>
-                                        <p className="text-xs text-slate-500">Marketing Manager</p>
-                                    </div>
+                                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-background-dark">
+                                    <p className="text-sm font-bold uppercase tracking-[0.18em] text-slate-400">{t('home.studentProgressTitle')}</p>
+                                    <p className="mt-3 text-4xl font-black text-slate-900 dark:text-white">{homeStats.totalStudents.toLocaleString(i18n.language === 'vi' ? 'vi-VN' : 'en-US')}</p>
+                                    <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">{t('home.studentProgressDescription')}</p>
                                 </div>
                             </div>
                         </div>

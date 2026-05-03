@@ -53,7 +53,7 @@ const CreateCourse = () => {
                 });
                 setLastSavedAt(new Date());
             } catch (err) {
-                toast.error(err.response?.data?.msg || 'Khong tai duoc du lieu khoa hoc');
+                toast.error(err.response?.data?.msg || 'Error occurred while fetching course data');
                 navigate('/admin/courses');
             }
         };
@@ -79,7 +79,7 @@ const CreateCourse = () => {
         if (!selectedFile) return;
 
         if (selectedFile.size > 5 * 1024 * 1024) {
-            toast.error('Kích thước ảnh vượt quá 5MB.');
+            toast.error('Image size exceeds 5MB.');
             return;
         }
 
@@ -95,13 +95,13 @@ const CreateCourse = () => {
     };
     // kiem tra du lieu khoa hoc truoc khi luu.
     const validateForm = () => {
-        if (!String(course.title || '').trim()) return 'Vui lòng nhập tên khóa học.';
-        if (!String(course.category || '').trim()) return 'Vui lòng chọn category.';
-        if (!String(course.description || '').trim()) return 'Vui lòng nhập mô tả khóa học.';
-        if (!String(course.image || '').trim()) return 'Vui lòng cung cấp ảnh đại diện khóa học.';
+        if (!String(course.title || '').trim()) return 'Please enter the course name.';
+        if (!String(course.category || '').trim()) return 'Please select a category.';
+        if (!String(course.description || '').trim()) return 'Please enter a course description.';
+        if (!String(course.image || '').trim()) return 'Please provide a course thumbnail image.';
 
         if (course.pricingType === 'paid' && Number(course.price || 0) <= 0) {
-            return 'Khóa học trả phí cần giá lớn hơn 0 VND.';
+            return 'Please enter a valid price for the course.';
         }
 
         return null;
@@ -125,7 +125,7 @@ const CreateCourse = () => {
         if (saving) return;
 
         if (!token) {
-            toast.error('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.');
+            toast.error('Your login session has expired, please log in again.');
             return;
         }
 
@@ -167,14 +167,14 @@ const CreateCourse = () => {
             setCourse((prevCourse) => ({ ...prevCourse, status: targetStatus }));
 
             toast.success(targetStatus === 'publish'
-                ? 'Khóa học đã được publish thành công!'
-                : 'Đã lưu draft thành công!');
+                ? 'Course has been published successfully!'
+                : 'Draft saved successfully!');
 
             if (redirectAfterSave) {
                 navigate('/admin/courses');
             }
         } catch (err) {
-            toast.error(err.response?.data?.msg || 'Có lỗi xảy ra khi lưu khóa học.');
+            toast.error(err.response?.data?.msg || 'Error occurred while saving course.');
         } finally {
             setSaving(false);
         }

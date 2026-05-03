@@ -14,7 +14,6 @@ import Register from '../features/account/pages/RegisterPage';
 import Profile from '../features/account/pages/ProfilePage';
 import DetailCourse from '../features/courses/detail-course/DetailCoursePage';
 import Checkout from '../features/payment/pages/CheckoutPage';
-import PaymentCheckout from '../features/payment/pages/PaymentCheckoutPage';
 import AdminRoute from '../features/staff/guards/AdminRoute'; 
 import StaffRoute from '../features/staff/guards/StaffRoute';
 import AdminDashboard from '../features/staff/pages/AdminDashboardPage';
@@ -59,12 +58,8 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/detail/:id" element={<DetailCourse />} />
             <Route path="/checkout" element={<Checkout />} />
-            <Route path="/payment-checkout" element={<PaymentCheckout />} />
-            <Route path="/payment/success" element={<PaymentCheckout />} />
-            <Route path="/payment/error" element={<PaymentCheckout />} />
-            <Route path="/payment/cancel" element={<PaymentCheckout />} />
             <Route path="/coming-soon" element={<ComingSoon />} />
-            <Route path="*" element={<div className="text-center p-20 font-bold text-gray-500">404 - Trang không tồn tại</div>} />
+            <Route path="*" element={<div className="text-center p-20 font-bold text-gray-500">404 - Page not found</div>} />
           </Route>
 
             <Route element={<StaffRoute />}>

@@ -6,18 +6,18 @@ const mongoose = require('mongoose');
 const UserSchema = new mongoose.Schema({
     name: { 
         type: String, 
-        required: [true, "Vui lòng nhập tên của bạn"], 
+        required: [true, "Please enter your name"], 
         trim: true 
     },
     email: { 
         type: String, 
-        required: [true, "Vui lòng nhập email"], 
+        required: [true, "Please enter email"], 
         unique: true,
         lowercase: true
     },
     password: { 
         type: String, 
-        required: [true, "Vui lòng nhập mật khẩu"] 
+        required: [true, "Please enter password"] 
     },
     avatar: {
         type: String,

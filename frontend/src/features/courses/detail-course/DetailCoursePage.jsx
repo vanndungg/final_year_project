@@ -1,6 +1,7 @@
 
 
 import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '../../../shared/api/axiosClient';
 import { GlobalState } from '../../../app/providers/GlobalState';
@@ -15,6 +16,7 @@ import { renderRatingStars } from './review/ReviewUtils.jsx';
 import usePdfLessonUrl from './lesson/document/PdfUrl';
 // hien thi chi tiet khoa hoc, lesson, tien do hoc va danh gia cua hoc vien.
 const DetailCourse = () => {
+    const { t, i18n } = useTranslation();
     const params = useParams();
     const navigate = useNavigate();
     const state = useContext(GlobalState);
@@ -83,7 +85,7 @@ const DetailCourse = () => {
                 setLessons(Array.isArray(lessonsRes.data) ? lessonsRes.data : []);
                 setReviews(Array.isArray(reviewsRes.data) ? reviewsRes.data : []);
             } catch {
-                toast.error('Khong the tai du lieu khoa hoc');
+                toast.error(t('detail.errors.loadFailed'));
             }
         };
 
@@ -109,7 +111,7 @@ const DetailCourse = () => {
                 });
                 syncProgress(response.data);
             } catch (error) {
-                console.error('Khong the tai tien do khoa hoc:', error);
+                console.error('Unable to load course progress:', error);
             }
         };
 
@@ -117,7 +119,7 @@ const DetailCourse = () => {
     }, [canStudy, params.id, syncProgress, token]);
 
     if (!course) {
-        return <div className="py-20 text-center italic">Dang tai du lieu...</div>;
+        return <div className="py-20 text-center italic">{t('detail.loading')}</div>;
     }
     const activeRating = hoverRating || rating;
     const reviewCount = reviews.length;
@@ -154,14 +156,14 @@ const DetailCourse = () => {
                 { courseId: course._id },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            toast.success(response.data.msg || 'Dang ky khoa hoc thanh cong');
+            toast.success(response.data.msg || t('detail.enrollment.success'));
             const userRes = await axiosClient.get('/users/infor', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUser(userRes.data);
             setCallback((prev) => !prev);
         } catch (error) {
-            toast.error(error.response?.data?.msg || 'Dang ky khoa hoc that bai');
+            toast.error(error.response?.data?.msg || t('detail.enrollment.failed'));
         } finally {
             setLoading(false);
         }
@@ -177,7 +179,7 @@ const DetailCourse = () => {
         const existed = currentCart.some((item) => String(item?._id || item) === String(course._id));
 
         if (existed) {
-            toast.info('Khoa hoc da co trong gio hang. Ban co the bam "Thanh toan ngay".');
+            toast.info(t('detail.cart.alreadyInCart'));
             return;
         }
 
@@ -204,9 +206,9 @@ const DetailCourse = () => {
             });
             setUser(userRes.data);
 
-            toast.success('Da them khoa hoc vao gio hang.');
+            toast.success(t('detail.cart.added'));
         } catch (error) {
-            toast.error(error.response?.data?.msg || 'Khong the them vao gio hang.');
+            toast.error(error.response?.data?.msg || t('detail.cart.addFailed'));
         } finally {
             setLoading(false);
         }
@@ -221,12 +223,12 @@ const DetailCourse = () => {
         }
 
         if (!isEnrolled) {
-            toast.error('Ban can so huu khoa hoc truoc khi danh gia.');
+            toast.error(t('detail.errors.mustOwnCourse'));
             return;
         }
 
         if (!rating || !String(comment).trim()) {
-            toast.error('Vui long chon sao va nhap noi dung danh gia.');
+            toast.error(t('detail.errors.completeReview'));
             return;
         }
 
@@ -235,14 +237,14 @@ const DetailCourse = () => {
             await axiosClient.post('/reviews', { courseId: course._id, rating, comment }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            toast.success('Da gui danh gia thanh cong.');
+            toast.success(t('detail.success.reviewSubmitted'));
             setComment('');
             setRating(0);
             setHoverRating(0);
             setShowAllReviews(true);
             setCallback((prev) => !prev);
         } catch (error) {
-            toast.error(error.response?.data?.msg || 'Gui danh gia that bai');
+            toast.error(error.response?.data?.msg || t('detail.errors.reviewSubmit'));
         } finally {
             setSubmittingReview(false);
         }
@@ -250,18 +252,18 @@ const DetailCourse = () => {
     // mo lesson va nap lai du lieu quiz hoac assignment lien quan.
     const openLesson = (lesson) => {
         if (!isLogged) {
-            toast.info('Vui long dang nhap de hoc bai.');
+            toast.info(t('detail.lessonErrors.loginToStudy'));
             navigate('/login');
             return;
         }
 
         if (!canStudy) {
-            toast.warn('Ban chua dang ky khoa hoc nen khong the hoc bai nay.');
+            toast.warn(t('detail.lessonErrors.courseNotOwned'));
             return;
         }
 
         if (lesson.isLocked) {
-            toast.warn('Bai hoc dang bi khoa.');
+            toast.warn(t('detail.lessonErrors.lockedLesson'));
             return;
         }
 
@@ -276,7 +278,7 @@ const DetailCourse = () => {
 
         if (completedLessonIds.has(String(lesson?._id || ''))) {
             if (!silent) {
-                toast.info('Bai hoc nay da duoc danh dau hoan thanh.');
+                toast.info(t('detail.lessonStatus.markedCompleted'));
             }
             return;
         }
@@ -291,11 +293,11 @@ const DetailCourse = () => {
 
             syncProgress(response.data?.progress);
             if (!silent) {
-                toast.success(response.data?.msg || 'Da cap nhat tien do bai hoc.');
+                toast.success(response.data?.msg || t('detail.lessonStatus.progressUpdated'));
             }
         } catch (error) {
             if (!silent) {
-                toast.error(error.response?.data?.msg || 'Khong the cap nhat tien do bai hoc.');
+                toast.error(error.response?.data?.msg || t('detail.lessonErrors.progressUpdateFailed'));
             }
         }
     };
@@ -305,7 +307,7 @@ const DetailCourse = () => {
 
         if (!isLessonCompleted(lesson?._id)) {
             if (!silent) {
-                toast.info('Bai hoc nay chua duoc danh dau hoan thanh.');
+                toast.info(t('detail.lessonStatus.unmarkedCompleted'));
             }
             return;
         }
@@ -320,11 +322,11 @@ const DetailCourse = () => {
 
             syncProgress(response.data?.progress);
             if (!silent) {
-                toast.success(response.data?.msg || 'Da hoan tac tien do bai hoc.');
+                toast.success(response.data?.msg || t('detail.lessonStatus.progressReverted'));
             }
         } catch (error) {
             if (!silent) {
-                toast.error(error.response?.data?.msg || 'Khong the hoan tac tien do bai hoc.');
+                toast.error(error.response?.data?.msg || t('detail.lessonErrors.progressRevertFailed'));
             }
         }
     };
@@ -334,8 +336,8 @@ const DetailCourse = () => {
 
         if (isLessonCompleted(lesson._id)) {
             const confirmed = await showConfirm(setConfirmDialog, {
-                title: 'Hủy hoàn thành',
-                message: 'Bạn có muốn hủy hoàn thành bài học này không?'
+                title: t('detail.confirm.unmarkTitle'),
+                message: t('detail.confirm.unmarkMessage')
             });
             if (!confirmed) return;
             await unmarkLessonComplete(lesson);
@@ -343,8 +345,8 @@ const DetailCourse = () => {
         }
 
         const confirmed = await showConfirm(setConfirmDialog, {
-            title: 'Xác nhận hoàn thành',
-            message: 'Bạn có chắc chắn muốn đánh dấu hoàn thành bài học này không?'
+            title: t('detail.confirm.completeTitle'),
+            message: t('detail.confirm.completeMessage')
         });
         if (!confirmed) return;
 
@@ -375,15 +377,15 @@ const DetailCourse = () => {
     };
     // tra ve nhan hien thi cho nut hanh dong trong modal lesson.
     const getLessonPrimaryActionLabel = () => {
-        if (!activeLesson) return 'Cap nhat';
+        if (!activeLesson) return t('detail.lessonActions.update');
         const lessonType = normalizeLessonType(activeLesson.lessonType);
 
         if (lessonType === 'quiz' || lessonType === 'assignment') {
-            return isLessonCompleted(activeLesson._id) ? 'Da nop bai' : 'Nop bai';
+            return isLessonCompleted(activeLesson._id) ? t('detail.lessonStatus.submitted') : t('detail.lessonActions.submit');
         }
 
-        if (isLessonCompleted(activeLesson._id)) return 'Da hoan thanh';
-        return 'Hoan thanh';
+        if (isLessonCompleted(activeLesson._id)) return t('detail.lessonStatus.completed');
+        return t('detail.lessonActions.complete');
     };
     // cham diem quiz, hien ket qua va cap nhat tien do neu dat.
     const submitQuiz = async () => {
@@ -391,7 +393,7 @@ const DetailCourse = () => {
 
         const questions = Array.isArray(activeLesson.quizQuestions) ? activeLesson.quizQuestions : [];
         if (questions.length === 0) {
-            toast.warn('Quiz hien tai chua co cau hoi duoc cau hinh.');
+            toast.warn(t('detail.lessonErrors.quizNotConfigured'));
             return;
         }
 
@@ -417,9 +419,9 @@ const DetailCourse = () => {
 
         if (passed) {
             await markLessonComplete(activeLesson, { silent: true });
-            toast.success('Ban da hoan thanh quiz va he thong da cap nhat tien do.');
+            toast.success(t('detail.lessonStatus.quizPassed'));
         } else {
-            toast.info('Chua dat diem qua. Thu lai nhe.');
+            toast.info(t('detail.lessonStatus.quizFailed'));
         }
     };
     // gui bai assignment len backend va dong bo tien do moi.
@@ -427,12 +429,12 @@ const DetailCourse = () => {
         if (!activeLesson) return;
 
         if (!assignmentAnswer.trim()) {
-            toast.error('Vui long nhap cau tra loi.');
+            toast.error(t('detail.lessonErrors.enterAssignmentAnswer'));
             return;
         }
 
         if (!token) {
-            toast.error('Vui long dang nhap de nop bai.');
+            toast.error(t('detail.lessonErrors.loginToSubmitAssignment'));
             return;
         }
 
@@ -447,10 +449,10 @@ const DetailCourse = () => {
             });
 
             syncProgress(response.data?.progress);
-            toast.success('Da nop bai assignment thanh cong va cap nhat tien do.');
+            toast.success(t('detail.lessonStatus.assignmentSubmitted'));
             setAssignmentAnswer('');
         } catch (error) {
-            toast.error(error.response?.data?.msg || 'Khong the nop bai assignment.');
+            toast.error(error.response?.data?.msg || t('detail.lessonErrors.assignmentSubmitFailed'));
         } finally {
             setSubmittingAssignment(false);
         }
@@ -480,9 +482,9 @@ const DetailCourse = () => {
             <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
                 <div className="lg:col-span-2">
                     <nav className="mb-6 flex items-center gap-2 text-sm font-medium text-slate-500">
-                        <Link className="hover:text-primary" to="/">Home</Link>
+                        <Link className="hover:text-primary" to="/">{t('header.home')}</Link>
                         <span className="material-symbols-outlined text-xs">chevron_right</span>
-                        <Link className="hover:text-primary" to="/courses">Courses</Link>
+                        <Link className="hover:text-primary" to="/courses">{t('header.courses')}</Link>
                         <span className="material-symbols-outlined text-xs">chevron_right</span>
                         <span className="text-slate-900 dark:text-slate-200">{course.title}</span>
                     </nav>
@@ -492,18 +494,18 @@ const DetailCourse = () => {
                         <div className="flex items-center gap-2">
                             <span className="font-bold text-amber-500">{averageRating.toFixed(1)}</span>
                             {renderRatingStars(averageRating, 'text-base')}
-                            <span className="text-gray-500">({reviewCount} danh gia)</span>
+                            <span className="text-gray-500">{t('detail.reviewCount', { count: reviewCount })}</span>
                         </div>
                         <span className="text-gray-400">•</span>
-                        <span className="flex items-center"><i className="fas fa-user-graduate mr-2 text-blue-500" />{studentCount.toLocaleString()} hoc vien</span>
+                        <span className="flex items-center"><i className="fas fa-user-graduate mr-2 text-blue-500" />{studentCount.toLocaleString(i18n.language)} {t('detail.students')}</span>
                     </div>
 
-                    <h2 className="mb-4 border-l-4 border-blue-600 pl-4 text-2xl font-bold">Mo ta khoa hoc</h2>
+                    <h2 className="mb-4 border-l-4 border-blue-600 pl-4 text-2xl font-bold">{t('detail.descriptionTitle')}</h2>
                     <p className="mb-10 whitespace-pre-line leading-relaxed text-gray-700">{course.description}</p>
 
                     {!canStudy && (
                         <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
-                            Ban chua so huu khoa hoc, vi vay khong the hoc lesson. Hay bam Them vao gio hang de tien hanh thanh toan.
+                            {t('detail.notPurchasedNotice')}
                         </div>
                     )}
 
@@ -539,12 +541,12 @@ const DetailCourse = () => {
                 <div className="lg:col-span-1">
                     <div className="sticky top-24 rounded-3xl border border-gray-50 bg-white p-8 text-center shadow-2xl">
                         <div className="mb-6">
-                            <p className="mb-2 text-sm font-bold uppercase tracking-widest text-gray-400">Gia khoa hoc</p>
-                            <h3 className="text-4xl font-black text-blue-600">{course.price === 0 ? 'MIEN PHI' : `${course.price.toLocaleString()}d`}</h3>
+                            <p className="mb-2 text-sm font-bold uppercase tracking-widest text-gray-400">{t('detail.priceTitle')}</p>
+                            <h3 className="text-4xl font-black text-blue-600">{course.price === 0 ? t('detail.free') : `${course.price.toLocaleString(i18n.language)}d`}</h3>
                         </div>
                         {isEnrolled ? (
                             <button className="flex w-full cursor-default items-center justify-center gap-2 rounded-2xl bg-green-100 py-4 font-black text-green-700">
-                                <i className="fas fa-check-circle" /> DA SO HUU
+                                <i className="fas fa-check-circle" /> {t('courses.enrolled')}
                             </button>
                         ) : (
                             <button
@@ -552,7 +554,7 @@ const DetailCourse = () => {
                                 disabled={loading}
                                 className="w-full rounded-2xl bg-blue-600 py-4 font-black text-white shadow-xl transition-all hover:bg-blue-700 active:scale-95"
                             >
-                                {loading ? 'DANG XU LY...' : (isPaidCourse ? (isInCart ? 'THANH TOAN NGAY' : 'THEM VAO GIO HANG') : 'DANG KY HOC NGAY')}
+                                {loading ? t('detail.processing') : (isPaidCourse ? (isInCart ? t('detail.checkoutNow') : t('detail.addToCart')) : t('detail.enrollNow'))}
                             </button>
                         )}
                     </div>

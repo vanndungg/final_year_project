@@ -1,11 +1,11 @@
 
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     filledStarStyle,
     formatRelativeReviewDate,
     getInitials,
-    getRatingLabel,
     outlineStarStyle,
     renderRatingStars
 } from './ReviewUtils.jsx';
@@ -28,20 +28,22 @@ const CourseReviewsSection = ({
     showAllReviews,
     setShowAllReviews
 }) => {
+    const { t, i18n } = useTranslation();
+
     return (
         <section className="mt-20 border-t border-slate-200 pt-10 dark:border-slate-800">
-            <h2 className="mb-8 text-2xl font-bold">Danh gia tu hoc vien</h2>
+            <h2 className="mb-8 text-2xl font-bold">{t('detail.reviewsTitle')}</h2>
 
             <div className="mb-12 grid grid-cols-1 gap-10 md:grid-cols-4">
                 <div className="col-span-1 flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900/50">
                     <div className="mb-2 text-5xl font-black text-slate-900 dark:text-white">{averageRating.toFixed(1)}</div>
                     <div className="mb-2">{renderRatingStars(averageRating, 'text-xl')}</div>
-                    <div className="text-sm font-medium text-slate-500">{reviewCount} danh gia</div>
+                    <div className="text-sm font-medium text-slate-500">{t('detail.reviewsSummary', { count: reviewCount })}</div>
                 </div>
                 <div className="col-span-1 space-y-3 md:col-span-3">
                     {ratingBreakdown.map(({ star, percentage }) => (
                         <div key={star} className="flex items-center gap-4">
-                            <span className="w-12 text-sm font-medium">{star} sao</span>
+                            <span className="w-12 text-sm font-medium">{t('detail.starRatingLabel', { count: star })}</span>
                             <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                                 <div className="h-full bg-primary" style={{ width: `${percentage}%` }} />
                             </div>
@@ -52,19 +54,19 @@ const CourseReviewsSection = ({
             </div>
 
             <div className="mb-12 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900/50">
-                <h3 className="mb-4 text-lg font-bold">Viet danh gia cua ban</h3>
+                <h3 className="mb-4 text-lg font-bold">{t('detail.writeReviewTitle')}</h3>
 
                 {!canInteractWithReviewForm && (
                     <div className="mb-4 rounded-xl border border-orange-100 bg-orange-50 p-4 text-sm italic text-orange-700">
                         {!isLogged
-                            ? 'Vui long dang nhap va so huu khoa hoc de gui danh gia.'
-                            : 'Ban can so huu khoa hoc de danh gia.'}
+                            ? t('detail.reviewFormPrompt.login')
+                            : t('detail.reviewFormPrompt.ownCourse')}
                     </div>
                 )}
 
                 <form onSubmit={submitReview} className="space-y-4">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Xep hang cua ban</label>
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('detail.yourRating')}</label>
                         <div className="flex gap-1 text-slate-300">
                             {Array.from({ length: 5 }, (_, index) => {
                                 const star = index + 1;
@@ -91,12 +93,17 @@ const CourseReviewsSection = ({
                             })}
                         </div>
                         <p className="text-sm text-slate-500">
-                            {activeRating > 0 ? `Ban dang chon ${activeRating} sao - ${getRatingLabel(activeRating)}` : 'Chon tu 1 den 5 sao'}
+                            {activeRating > 0
+                                ? t('detail.ratingFeedback', {
+                                    count: activeRating,
+                                    ratingLabel: t(`detail.ratingLabels.${activeRating}`)
+                                })
+                                : t('detail.selectStars')}
                         </p>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Loi nhan cua ban</label>
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('detail.yourMessage')}</label>
                         <textarea
                             className="w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-800 dark:bg-slate-900"
                             rows="4"
@@ -111,17 +118,17 @@ const CourseReviewsSection = ({
                         disabled={!canInteractWithReviewForm || !rating || !comment.trim() || submittingReview}
                         className="inline-flex items-center justify-center rounded-lg bg-amber-500 px-6 py-2.5 text-sm font-bold text-slate-950 hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-amber-300"
                     >
-                        {submittingReview ? 'Dang gui...' : 'Gui danh gia'}
+                        {submittingReview ? t('detail.submittingReview') : t('detail.submitReview')}
                     </button>
                 </form>
             </div>
 
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                 {reviewCount === 0 ? (
-                    <p className="italic text-slate-500 md:col-span-2">Chua co danh gia nao cho khoa hoc nay.</p>
+                    <p className="italic text-slate-500 md:col-span-2">{t('detail.noReviewsYet')}</p>
                 ) : (
                     visibleReviews.map((review) => {
-                        const reviewerName = review.userId?.name || 'Hoc vien';
+                        const reviewerName = review.userId?.name || t('detail.studentFallback');
                         const reviewerInitials = getInitials(reviewerName);
 
                         return (
@@ -138,7 +145,7 @@ const CourseReviewsSection = ({
                                         <h5 className="text-sm font-bold text-slate-900 dark:text-white">{reviewerName}</h5>
                                         <div className="flex items-center gap-2">
                                             <div className="flex text-amber-500">{renderRatingStars(Number(review.rating || 0), 'text-sm')}</div>
-                                            <span className="text-[10px] font-medium text-slate-400">{formatRelativeReviewDate(review.createdAt)}</span>
+                                            <span className="text-[10px] font-medium text-slate-400">{formatRelativeReviewDate(review.createdAt, i18n.language)}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -155,7 +162,7 @@ const CourseReviewsSection = ({
                     onClick={() => setShowAllReviews((prev) => !prev)}
                     className="mx-auto mt-10 block rounded-lg border border-primary px-6 py-2 text-sm font-bold text-primary hover:bg-primary/5"
                 >
-                    {showAllReviews ? 'Thu gon danh gia' : 'Xem tat ca danh gia'}
+                    {showAllReviews ? t('detail.collapseReviews') : t('detail.viewAllReviews')}
                 </button>
             )}
         </section>

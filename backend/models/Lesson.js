@@ -27,12 +27,12 @@ const quizQuestionSchema = new mongoose.Schema({
 const lessonSchema = new mongoose.Schema({
     title: {
         type: String,
-        required: [true, "Vui lòng nhập tiêu đề bài học"],
+        required: [true, "Please enter lesson title"],
         trim: true
     },
     description: {
         type: String,
-        required: [true, "Vui lòng nhập mô tả bài học"]
+        required: [true, "Please enter lesson description"]
     },
     lessonType: {
         type: String,
@@ -165,23 +165,23 @@ lessonSchema.pre('validate', function normalizeLesson(next) {
 
     if (this.lessonType === 'video' && !this.video_id && !this.videoUrl && !this.videoUploadData) {
         if (typeof next === 'function') {
-            return next(new Error('Vui lòng cung cấp Video ID, videoUrl hoặc file video cho lesson dạng video.'));
+            return next(new Error('Please provide Video ID, videoUrl or video file for video lesson.'));
         }
-        throw new Error('Vui lòng cung cấp Video ID, videoUrl hoặc file video cho lesson dạng video.');
+        throw new Error('Please provide Video ID, videoUrl or video file for video lesson.');
     }
 
     if (this.lessonType === 'document' && !String(this.content || '').trim() && !String(this.resourceUrl || '').trim()) {
         if (typeof next === 'function') {
-            return next(new Error('Vui lòng tải file PDF hoặc nhập nội dung cho lesson dạng tài liệu.'));
+            return next(new Error('Please upload PDF file or enter content for document lesson.'));
         }
-        throw new Error('Vui lòng tải file PDF hoặc nhập nội dung cho lesson dạng tài liệu.');
+        throw new Error('Please upload PDF file or enter content for document lesson.');
     }
 
     if (this.lessonType === 'assignment' && !String(this.content || '').trim()) {
         if (typeof next === 'function') {
-            return next(new Error('Vui lòng nhập nội dung cho lesson dạng tài liệu hoặc bài tập.'));
+            return next(new Error('Please enter content for document or assignment lesson.'));
         }
-        throw new Error('Vui lòng nhập nội dung cho lesson dạng tài liệu hoặc bài tập.');
+        throw new Error('Please enter content for document or assignment lesson.');
     }
 
     if (this.lessonType === 'quiz' && Number(this.quizQuestionCount || 0) <= 0) {

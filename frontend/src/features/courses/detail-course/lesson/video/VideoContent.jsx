@@ -1,8 +1,11 @@
 
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 // hien thi video upload, youtube hoac video url cua lesson.
 const VideoLessonContent = ({ activeLesson, getYoutubeEmbedUrl }) => {
+    const { t } = useTranslation();
+
     if (!activeLesson) return null;
 
     const youtubeEmbedUrl = getYoutubeEmbedUrl(activeLesson);
@@ -24,7 +27,7 @@ const VideoLessonContent = ({ activeLesson, getYoutubeEmbedUrl }) => {
             ) : activeLesson.videoUrl ? (
                 <video controls className="w-full rounded-xl bg-black" src={activeLesson.videoUrl} />
             ) : (
-                <p className="text-sm text-slate-500">Video hien chua san sang.</p>
+                <p className="text-sm text-slate-500">{t('detail.videoNotReady')}</p>
             )}
         </div>
     );

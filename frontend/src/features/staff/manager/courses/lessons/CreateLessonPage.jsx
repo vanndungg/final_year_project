@@ -3,6 +3,7 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { GlobalState } from '../../../../../app/providers/GlobalState';
 import axiosClient from '../../../../../shared/api/axiosClient';
 import AdminPanelLayout from '../../../pages/AdminPanelLayout';
@@ -20,6 +21,7 @@ const CreateLesson = () => {
     const navigate = useNavigate();
     const state = useContext(GlobalState);
     const [token = ''] = state?.token || [''];
+    const { t } = useTranslation();
 
     const [lesson, setLesson] = useState(getDefaultLesson(courseId || ''));
     const [loading, setLoading] = useState(false);
@@ -74,7 +76,7 @@ const CreateLesson = () => {
                 });
                 setLastSavedAt(new Date());
             } catch (error) {
-                toast.error(error.response?.data?.msg || 'Không thể tải dữ liệu lesson.');
+                toast.error(error.response?.data?.msg || 'Unable to load lesson data.');
                 navigate(-1);
             } finally {
                 if (mounted) {
@@ -122,11 +124,11 @@ const CreateLesson = () => {
         const file = event.target.files?.[0];
         if (!file) return;
         if (file.type !== 'application/pdf') {
-            toast.error('Vui lòng chọn file PDF hợp lệ.');
+            toast.error('Please select a valid PDF file.');
             return;
         }
         if (file.size > 10 * 1024 * 1024) {
-            toast.error('File PDF chỉ hỗ trợ tối đa 10MB.');
+            toast.error('PDF file size exceeds 10MB.');
             return;
         }
 
@@ -173,7 +175,7 @@ const CreateLesson = () => {
     const removeQuestion = (qIndex) => {
         setLesson((prev) => {
             if (prev.quizQuestions.length <= 1) {
-                toast.warn('Quiz cần tối thiểu 1 câu hỏi.');
+                toast.warn('Quiz requires at least 1 question.');
                 return prev;
             }
 
@@ -201,7 +203,7 @@ const CreateLesson = () => {
             quizQuestions: prev.quizQuestions.map((question, index) => {
                 if (index !== qIndex) return question;
                 if (question.options.length <= 2) {
-                    toast.warn('Mỗi câu hỏi cần tối thiểu 2 đáp án.');
+                    toast.warn('Each question requires at least 2 options.');
                     return question;
                 }
                 const nextOptions = question.options.filter((_, idx) => idx !== optionIndex);
@@ -212,16 +214,16 @@ const CreateLesson = () => {
     };
     // kiem tra du lieu lesson truoc khi luu.
     const validateLesson = () => {
-        if (!lesson.title.trim()) return 'Vui lòng nhập tiêu đề bài học.';
-        if (!lesson.description.trim()) return 'Vui lòng nhập mô tả bài học.';
-        if (!String(lesson.courseId || courseId || '').trim()) return 'Thiếu courseId của lesson.';
+        if (!lesson.title.trim()) return 'Please enter the lesson title.';
+        if (!lesson.description.trim()) return 'Please enter the lesson description.';
+        if (!String(lesson.courseId || courseId || '').trim()) return 'Missing courseId for the lesson.';
 
         if (lesson.lessonType === 'video' && !lesson.video_id.trim() && !lesson.videoUrl.trim()) {
-            return 'Video lesson cần YouTube ID hoặc video URL.';
+            return 'Video lesson requires a YouTube ID or video URL.';
         }
 
         if (lesson.lessonType === 'document' && !lesson.resourceUrl.trim()) {
-            return 'Document lesson cần file PDF.';
+            return 'Document lesson requires a PDF file.';
         }
 
         if (lesson.lessonType === 'quiz') {
@@ -233,12 +235,12 @@ const CreateLesson = () => {
                 .filter((question) => question.question && question.options.length >= 2);
 
             if (validQuestions.length === 0) {
-                return 'Quiz cần ít nhất 1 câu hỏi với tối thiểu 2 đáp án.';
+                return 'Quiz requires at least 1 question with a minimum of 2 options.';
             }
         }
 
         if (lesson.lessonType === 'assignment' && !lesson.content.trim()) {
-            return 'Assignment lesson cần câu hỏi/yêu cầu bài tập.';
+            return 'Assignment lesson requires a question/assignment prompt.';
         }
 
         return null;
@@ -282,7 +284,7 @@ const CreateLesson = () => {
     const submitLesson = async ({ targetStatus, redirectAfterSave }) => {
         if (saving) return;
         if (!token) {
-            toast.error('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.');
+            toast.error('Your login session has expired, please log in again.');
             return;
         }
 
@@ -307,13 +309,13 @@ const CreateLesson = () => {
 
             setLastSavedAt(new Date());
             setLesson((prev) => ({ ...prev, publishStatus: targetStatus }));
-            toast.success(targetStatus === 'publish' ? 'Lesson đã publish.' : 'Đã lưu draft lesson.');
+            toast.success(targetStatus === 'publish' ? 'Lesson has been published.' : 'Lesson draft has been saved.');
 
             if (redirectAfterSave) {
                 navigate(`/admin/lessons/${String(lesson.courseId || courseId || '').trim()}`);
             }
         } catch (error) {
-            toast.error(error.response?.data?.msg || 'Không thể lưu bài học.');
+            toast.error(error.response?.data?.msg || 'Failed to save the lesson.');
         } finally {
             setSaving(false);
         }
@@ -325,7 +327,7 @@ const CreateLesson = () => {
                 <div className="min-h-screen p-10">
                     <div className="mx-auto max-w-4xl rounded-xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-900">
                         <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
-                        <p className="text-sm text-slate-500">Đang tải thông tin bài học...</p>
+                        <p className="text-sm text-slate-500">{t('admin.loadingLessonData')}</p>
                     </div>
                 </div>
             </AdminPanelLayout>
@@ -354,7 +356,7 @@ const CreateLesson = () => {
                                     onClick={() => submitLesson({ targetStatus: 'draft', redirectAfterSave: false })}
                                     className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                                 >
-                                    Save Draft
+                                    {t('admin.saveDraft')}
                                 </button>
                                 <button
                                     type="button"
@@ -362,7 +364,7 @@ const CreateLesson = () => {
                                     onClick={() => submitLesson({ targetStatus: 'publish', redirectAfterSave: true })}
                                     className="rounded-lg bg-green-600 px-5 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-60"
                                 >
-                                    Publish Lesson
+                                    {t('admin.publishLesson')}
                                 </button>
                             </div>
                         </div>
@@ -373,10 +375,10 @@ const CreateLesson = () => {
 
                     <div className="space-y-6">
                         <section className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-                            <h2 className="mb-4 text-lg font-bold">Lesson Essentials</h2>
+                            <h2 className="mb-4 text-lg font-bold">{t('admin.lessonEssentials')}</h2>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="md:col-span-2">
-                                    <label className="mb-1 block text-sm font-semibold">Title</label>
+                                    <label className="mb-1 block text-sm font-semibold">{t('admin.lessonTitle')}</label>
                                     <input
                                         value={lesson.title}
                                         onChange={(event) => handleChange('title', event.target.value)}
@@ -384,7 +386,7 @@ const CreateLesson = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="mb-1 block text-sm font-semibold">Type</label>
+                                    <label className="mb-1 block text-sm font-semibold">{t('admin.lessonType')}</label>
                                     <select
                                         value={lesson.lessonType}
                                         onChange={(event) => handleLessonTypeChange(event.target.value)}
@@ -396,7 +398,7 @@ const CreateLesson = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="mb-1 block text-sm font-semibold">Duration (minutes)</label>
+                                    <label className="mb-1 block text-sm font-semibold">{t('admin.durationMinutes')}</label>
                                     <input
                                         type="number"
                                         min="0"
@@ -406,7 +408,7 @@ const CreateLesson = () => {
                                     />
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label className="mb-1 block text-sm font-semibold">Description</label>
+                                    <label className="mb-1 block text-sm font-semibold">{t('admin.lessonDescription')}</label>
                                     <textarea
                                         rows="3"
                                         value={lesson.description}
@@ -419,10 +421,10 @@ const CreateLesson = () => {
 
                         {lesson.lessonType === 'video' && (
                             <section className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-                                <h2 className="mb-4 text-lg font-bold">Video Lesson</h2>
+                                <h2 className="mb-4 text-lg font-bold">{t('admin.videoLesson')}</h2>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div>
-                                        <label className="mb-1 block text-sm font-semibold">YouTube Video ID</label>
+                                        <label className="mb-1 block text-sm font-semibold">{t('admin.youtubeVideoId')}</label>
                                         <input
                                             value={lesson.video_id}
                                             onChange={(event) => handleChange('video_id', event.target.value)}
@@ -431,7 +433,7 @@ const CreateLesson = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="mb-1 block text-sm font-semibold">External URL</label>
+                                        <label className="mb-1 block text-sm font-semibold">{t('admin.externalUrl')}</label>
                                         <input
                                             value={lesson.videoUrl}
                                             onChange={(event) => handleChange('videoUrl', event.target.value)}
@@ -445,7 +447,7 @@ const CreateLesson = () => {
 
                         {lesson.lessonType === 'document' && (
                             <section className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-                                <h2 className="mb-4 text-lg font-bold">Document Lesson</h2>
+                                <h2 className="mb-4 text-lg font-bold">{t('admin.documentLesson')}</h2>
 
                                 <input
                                     id="lesson-pdf-upload"
@@ -461,14 +463,14 @@ const CreateLesson = () => {
                                             <span className="material-symbols-outlined text-3xl text-emerald-600">picture_as_pdf</span>
                                             <div>
                                                 <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{lesson.resourceName}</p>
-                                                <p className="text-xs text-emerald-600 dark:text-emerald-400">PDF đã sẵn sàng để lưu</p>
+                                                <p className="text-xs text-emerald-600 dark:text-emerald-400">{t('admin.pdfReady')}</p>
                                             </div>
                                         </div>
                                         <label
                                             htmlFor="lesson-pdf-upload"
                                             className="cursor-pointer rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
                                         >
-                                            Đổi file
+                                            {t('admin.changeFile')}
                                         </label>
                                     </div>
                                 ) : (
@@ -477,8 +479,8 @@ const CreateLesson = () => {
                                         className="block cursor-pointer rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-10 text-center transition-colors hover:border-primary/60 hover:bg-primary/5 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-primary/40"
                                     >
                                         <span className="material-symbols-outlined mb-3 block text-5xl text-slate-400">picture_as_pdf</span>
-                                        <p className="mb-1 text-sm font-semibold">Nhấn để chọn file PDF</p>
-                                        <p className="text-xs text-slate-500">Chỉ hỗ trợ PDF · Tối đa 10MB</p>
+                                        <p className="mb-1 text-sm font-semibold">{t('admin.uploadPdfPrompt')}</p>
+                                        <p className="text-xs text-slate-500">{t('admin.pdfSupportHint')}</p>
                                     </label>
                                 )}
                             </section>
@@ -487,22 +489,22 @@ const CreateLesson = () => {
                         {lesson.lessonType === 'quiz' && (
                             <section className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
                                 <div className="mb-4 flex items-center justify-between gap-3">
-                                    <h2 className="text-lg font-bold">Quiz Builder</h2>
+                                    <h2 className="text-lg font-bold">{t('admin.quizBuilder')}</h2>
                                     <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                                        {lesson.quizQuestions.length} câu hỏi
+                                        {lesson.quizQuestions.length} {t('admin.questions')}
                                     </span>
                                 </div>
                                 <div className="space-y-6">
                                     {lesson.quizQuestions.map((question, qIndex) => (
                                         <div key={`question-${qIndex + 1}`} className="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
                                             <div className="mb-3 flex items-center justify-between">
-                                                <p className="text-sm font-bold">Câu {qIndex + 1}</p>
-                                                <button type="button" onClick={() => removeQuestion(qIndex)} className="text-xs font-bold text-red-500 hover:text-red-700">Xóa câu hỏi</button>
+                                                <p className="text-sm font-bold">{t('admin.questionLabel', { number: qIndex + 1 })}</p>
+                                                <button type="button" onClick={() => removeQuestion(qIndex)} className="text-xs font-bold text-red-500 hover:text-red-700">{t('admin.deleteQuestion')}</button>
                                             </div>
                                             <input
                                                 value={question.question}
                                                 onChange={(event) => updateQuestion(qIndex, 'question', event.target.value)}
-                                                placeholder="Nhập nội dung câu hỏi..."
+                                                placeholder={t('admin.enterQuestionText')}
                                                 className="mb-4 w-full rounded-lg border-slate-200 bg-slate-50 focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800"
                                             />
                                             <div className="space-y-2">
@@ -518,7 +520,7 @@ const CreateLesson = () => {
                                                         <input
                                                             value={option}
                                                             onChange={(event) => updateQuestionOption(qIndex, optionIndex, event.target.value)}
-                                                            placeholder={`Đáp án ${optionIndex + 1}`}
+                                                            placeholder={t('admin.optionPlaceholder', { number: optionIndex + 1 })}
                                                             className="w-full rounded-lg border-slate-200 bg-slate-50 focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800"
                                                         />
                                                         {question.options.length > 2 && (
@@ -526,7 +528,7 @@ const CreateLesson = () => {
                                                                 type="button"
                                                                 onClick={() => removeOption(qIndex, optionIndex)}
                                                                 className="shrink-0 rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
-                                                                title="Xóa đáp án"
+                                                                title={t('admin.deleteOption')}
                                                             >
                                                                 <span className="material-symbols-outlined text-[18px]">close</span>
                                                             </button>
@@ -539,7 +541,7 @@ const CreateLesson = () => {
                                                 onClick={() => addOption(qIndex)}
                                                 className="mt-3 text-xs font-semibold text-primary hover:text-blue-700"
                                             >
-                                                + Thêm đáp án
+                                                + {t('admin.addOption')}
                                             </button>
                                         </div>
                                     ))}
@@ -550,20 +552,20 @@ const CreateLesson = () => {
                                     className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 py-3 text-sm font-bold text-primary transition-colors hover:border-primary/70 hover:bg-primary/10"
                                 >
                                     <span className="material-symbols-outlined text-[20px]">add_circle</span>
-                                    Thêm câu hỏi
+                                    {t('admin.addQuestion')}
                                 </button>
                             </section>
                         )}
 
                         {lesson.lessonType === 'assignment' && (
                             <section className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-                                <h2 className="mb-4 text-lg font-bold">Assignment Lesson</h2>
-                                <label className="mb-1 block text-sm font-semibold">Question / Prompt</label>
+                                <h2 className="mb-4 text-lg font-bold">{t('admin.assignmentLesson')}</h2>
+                                <label className="mb-1 block text-sm font-semibold">{t('admin.assignmentPrompt')}</label>
                                 <textarea
                                     rows="8"
                                     value={lesson.content}
                                     onChange={(event) => handleChange('content', event.target.value)}
-                                    placeholder="Nhap duy nhat cau hoi giao cho hoc vien..."
+                                    placeholder={t('admin.enterAssignmentPrompt')}
                                     className="w-full rounded-lg border-slate-200 bg-slate-50 focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800"
                                 />
                             </section>
@@ -577,7 +579,7 @@ const CreateLesson = () => {
                             onClick={() => submitLesson({ targetStatus: lesson.publishStatus || 'draft', redirectAfterSave: true })}
                             className="rounded-lg bg-primary px-6 py-2 text-sm font-bold text-white disabled:opacity-60"
                         >
-                            {saving ? 'Saving...' : 'Save Lesson'}
+                            {saving ? t('admin.saving') : t('admin.saveLesson')}
                         </button>
                     </footer>
                 </div>

@@ -3,19 +3,21 @@ import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axiosClient from '../../shared/api/axiosClient';
 import { GlobalState } from '../../app/providers/GlobalState';
+import { useTranslation } from 'react-i18next';
 
 const DEFAULT_AVATAR = 'https://via.placeholder.com/320x320?text=Teacher';
 const SPECIALTIES = ['Lập trình web', 'Thiết kế UI/UX', 'Digital marketing', 'Phân tích dữ liệu', 'Kỹ năng nghề nghiệp', 'Kinh doanh số'];
-const HIGHLIGHTS = ['10+ năm kinh nghiệm', 'Dạy theo dự án thực tế', 'Hướng dẫn sát năng lực', 'Nội dung cập nhật liên tục'];
+const HIGHLIGHTS = ['10+ years experience', 'Project-based teaching', 'Personalized guidance', 'Continuously updated content'];
 
-const formatJoinDate = (value) => {
+const formatJoinDate = (value, locale = 'en-US') => {
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return 'Đang cập nhật';
-    return date.toLocaleDateString('vi-VN', { year: 'numeric', month: 'long' });
+    if (Number.isNaN(date.getTime())) return locale === 'vi-VN' ? 'Đang cập nhật' : 'Updating';
+    return date.toLocaleDateString(locale, { year: 'numeric', month: 'long' });
 };
 
 // hien thi trang gioi thieu doi ngu giang vien cho nguoi dung public.
 const TeachersPage = () => {
+    const { t, i18n } = useTranslation();
     const state = useContext(GlobalState);
     const [isLogged = false] = state?.userAPI?.isLogged || [false];
     const [teachers, setTeachers] = useState([]);
@@ -28,7 +30,7 @@ const TeachersPage = () => {
                 const response = await axiosClient.get('/users/public_teachers');
                 setTeachers(Array.isArray(response.data) ? response.data : []);
             } catch (error) {
-                toast.error(error.response?.data?.msg || 'Không thể tải danh sách giảng viên.');
+                toast.error(error.response?.data?.msg || t('teachers.loadError'));
                 setTeachers([]);
             }
             setLoading(false);
@@ -52,43 +54,43 @@ const TeachersPage = () => {
                     <div className="grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr]">
                         <div className="space-y-6">
                             <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.24em] text-primary">
-                                Đội ngũ giảng viên
+                                {t('teachers.badge')}
                             </span>
                             <h1 className="max-w-3xl text-4xl font-black leading-tight tracking-tight md:text-5xl lg:text-6xl">
-                                Những người đứng lớp biến kiến thức thành lộ trình học rõ ràng, thực chiến và dễ theo.
+                                {t('teachers.title')}
                             </h1>
                             <p className="max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-400">
-                                Mỗi giảng viên trên EduLearn mang đến một thế mạnh riêng: tư duy hệ thống, ví dụ thực tế và cách truyền đạt giúp học viên áp dụng được ngay sau mỗi bài học.
+                                {t('teachers.subtitle')}
                             </p>
                             <div className="flex flex-wrap gap-4">
                                 <Link to="/courses" className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white shadow-lg shadow-emerald-600/20 transition-transform hover:-translate-y-0.5 hover:bg-emerald-700">
                                     <span className="material-symbols-outlined text-[20px]">school</span>
-                                    Xem khóa học
+                                    {t('teachers.viewCourses')}
                                 </Link>
                                 {!isLogged && (
                                     <Link to="/register" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 font-bold text-slate-700 transition-colors hover:border-primary hover:text-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
                                         <span className="material-symbols-outlined text-[20px]">person_add</span>
-                                        Tham gia học ngay
+                                        {t('teachers.joinNow')}
                                     </Link>
                                 )}
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="rounded-3xl bg-slate-900 p-6 text-white shadow-xl shadow-slate-900/10">
-                                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Giảng viên</p>
+                                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">{t('teachers.statsTitle')}</p>
                                 <p className="mt-3 text-5xl font-black">{teachers.length}</p>
-                                <p className="mt-3 text-sm leading-6 text-slate-300">Đang đồng hành cùng học viên trên nhiều chủ đề từ công nghệ đến kỹ năng nghề nghiệp.</p>
+                                <p className="mt-3 text-sm leading-6 text-slate-300">{t('teachers.statsDescription')}</p>
                             </div>
                             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/40 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-                                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Cam kết</p>
-                                <p className="mt-3 text-2xl font-black">Bài giảng thực tế</p>
-                                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">Nội dung được thiết kế để người học có thể dùng ngay vào công việc và dự án cá nhân.</p>
+                                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">{t('teachers.commitmentTitle')}</p>
+                                <p className="mt-3 text-2xl font-black">{t('teachers.commitmentHighlight')}</p>
+                                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">{t('teachers.commitmentDescription')}</p>
                             </div>
                             <div className="col-span-2 rounded-3xl border border-slate-200 bg-gradient-to-r from-amber-50 via-white to-blue-50 p-6 shadow-lg shadow-slate-200/40 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
                                 <div className="flex flex-wrap items-center justify-between gap-6">
                                     <div>
-                                        <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Điểm khác biệt</p>
-                                        <p className="mt-3 text-2xl font-black">Giảng viên không chỉ dạy, mà còn dẫn dắt.</p>
+                                        <p className="text-sm uppercase tracking-[0.2em] text-slate-400">{t('teachers.differentiatorTitle')}</p>
+                                        <p className="mt-3 text-2xl font-black">{t('teachers.differentiatorHighlight')}</p>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
                                         {HIGHLIGHTS.map((item) => (
@@ -108,11 +110,11 @@ const TeachersPage = () => {
                 <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
                     <div className="mb-10 flex items-end justify-between gap-6">
                         <div>
-                            <p className="text-sm font-bold uppercase tracking-[0.24em] text-primary">Giới thiệu giảng viên</p>
-                            <h2 className="mt-3 text-3xl font-black tracking-tight">Chọn người hướng dẫn phù hợp với mục tiêu của bạn</h2>
+                            <p className="text-sm font-bold uppercase tracking-[0.24em] text-primary">{t('teachers.introSectionTitle')}</p>
+                            <h2 className="mt-3 text-3xl font-black tracking-tight">{t('teachers.introSectionHeading')}</h2>
                         </div>
                         <p className="max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-                            Giao diện này giữ dữ liệu thật từ hệ thống và trình bày theo phong cách public, thay cho trang quản trị đã thêm nhầm trước đó.
+                            {t('teachers.introSectionDescription')}
                         </p>
                     </div>
 
@@ -142,14 +144,14 @@ const TeachersPage = () => {
                                     </div>
                                     <div className="space-y-4 p-6">
                                         <div className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-                                            <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">Giảng viên</span>
-                                            <span>Tham gia từ {formatJoinDate(teacher.createdAt)}</span>
+                                            <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">{t('teachers.teacherLabel')}</span>
+                                            <span>{t('teachers.joinedSince')} {formatJoinDate(teacher.createdAt, i18n.language === 'vi' ? 'vi-VN' : 'en-US')}</span>
                                         </div>
                                         <p className="text-sm leading-7 text-slate-600 dark:text-slate-400">
-                                            {teacher.name || 'Giảng viên'} tập trung vào {teacher.specialty.toLowerCase()}, ưu tiên ví dụ trực quan, nhịp học rõ ràng và cách giải thích đủ thực tế để người học bám theo lâu dài.
+                                            {t('teachers.teacherDescription', { name: teacher.name || t('teachers.defaultTeacher'), specialty: teacher.specialty.toLowerCase() })}
                                         </p>
                                         <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/70">
-                                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Phong cách hướng dẫn</p>
+                                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{t('teachers.teachingStyle')}</p>
                                             <p className="mt-2 text-sm font-semibold text-slate-700 dark:text-slate-200">{teacher.highlight}</p>
                                         </div>
                                     </div>
@@ -159,9 +161,9 @@ const TeachersPage = () => {
                     ) : (
                         <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-6 py-20 text-center dark:border-slate-700 dark:bg-slate-900">
                             <span className="material-symbols-outlined text-5xl text-slate-300 dark:text-slate-600">co_present</span>
-                            <h3 className="mt-4 text-2xl font-black">Chưa có dữ liệu giảng viên để hiển thị</h3>
+                            <h3 className="mt-4 text-2xl font-black">{t('teachers.emptyTitle')}</h3>
                             <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-                                Khi hệ thống có tài khoản giáo viên, trang này sẽ tự động hiển thị danh sách để người học khám phá đội ngũ giảng dạy.
+                                {t('teachers.emptyDescription')}
                             </p>
                         </div>
                     )}

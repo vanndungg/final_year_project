@@ -1,6 +1,7 @@
 
 
 import React, { useContext, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GlobalState } from '../../../../app/providers/GlobalState';
 import axiosClient from '../../../../shared/api/axiosClient';
 import { toast } from 'react-toastify';
@@ -10,6 +11,7 @@ import { getLessonCount, getStudentCount, normalizeCourseStatus } from '../../..
 import { showConfirm } from '../../../../shared/utils/confirmUtils';
 // hien thi danh sach khoa hoc cho admin/staff quan ly.
 const ManageCourses = () => {
+    const { t } = useTranslation();
     const state = useContext(GlobalState);
     const [courses = []] = state?.coursesAPI?.courses || [[]];
     const [token = ''] = state?.token || [''];
@@ -62,13 +64,13 @@ const ManageCourses = () => {
     // xoa khoa hoc va tai lai danh sach sau khi thanh cong.
     const deleteCourse = async (id) => {
         if (!token) {
-            toast.error('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.');
+            toast.error('Your login session has expired, please log in again.');
             return;
         }
 
         const confirmed = await showConfirm(setConfirmDialog, {
-            title: 'Xóa khóa học',
-            message: 'Bạn có chắc chắn muốn xóa khóa học này không?'
+            title: 'Delete Course',
+            message: 'Are you sure you want to delete this course?'
         });
         if (!confirmed) return;
 
@@ -76,10 +78,10 @@ const ManageCourses = () => {
             const res = await axiosClient.delete(`/courses/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            toast.success(res.data.msg || 'Xoa thanh cong!');
+            toast.success(res.data.msg || 'Delete successful!');
             setCallback(!callback);
         } catch (err) {
-            toast.error(err.response?.data?.msg || 'Loi khi xoa');
+            toast.error(err.response?.data?.msg || 'Error occurred while deleting course');
         }
     };
 
@@ -88,8 +90,8 @@ const ManageCourses = () => {
             <div className="p-8 space-y-8">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Course Management</h2>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Manage your curriculum and track course performance.</p>
+                            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{t('admin.courseManagement')}</h2>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{t('admin.manageYourCurriculum')}</p>
                         </div>
                         <Link to="/admin/edit_course" className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20">
                             <span className="material-symbols-outlined text-xl">add</span>
@@ -99,19 +101,19 @@ const ManageCourses = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Courses</p>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{t('admin.totalCourses')}</p>
                             <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalCourses}</p>
                         </div>
                         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Active Courses</p>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{t('admin.activeCourses')}</p>
                             <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{activeCourses}</p>
                         </div>
                         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Lessons</p>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{t('admin.totalLessons')}</p>
                             <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalLessons.toLocaleString()}</p>
                         </div>
                         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Students</p>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{t('admin.totalStudents')}</p>
                             <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalStudents.toLocaleString()}</p>
                         </div>
                     </div>
@@ -121,7 +123,7 @@ const ManageCourses = () => {
                             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
                             <input
                                 className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all"
-                                placeholder="Search by course name..."
+                                placeholder={t('admin.searchByCourseName')}
                                 type="text"
                                 value={searchTerm}
                                 onChange={(event) => setSearchTerm(event.target.value)}
@@ -133,7 +135,9 @@ const ManageCourses = () => {
                             onChange={(event) => setCategoryFilter(event.target.value)}
                         >
                             {categories.map((category) => (
-                                <option key={category} value={category}>{category}</option>
+                                <option key={category} value={category}>
+                                    {category === 'All Categories' ? t('admin.allCategories') : category}
+                                </option>
                             ))}
                         </select>
                         <select
@@ -141,13 +145,13 @@ const ManageCourses = () => {
                             value={statusFilter}
                             onChange={(event) => setStatusFilter(event.target.value)}
                         >
-                            <option value="All Status">All Status</option>
-                            <option value="publish">Published</option>
-                            <option value="draft">Draft</option>
+                            <option value="All Status">{t('admin.allStatus')}</option>
+                            <option value="publish">{t('admin.published')}</option>
+                            <option value="draft">{t('admin.draft')}</option>
                         </select>
                         <Link to="/coming-soon" className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                             <span className="material-symbols-outlined text-lg">filter_list</span>
-                            More Filters
+                            {t('admin.moreFilters')}
                         </Link>
                     </div>
 
@@ -156,13 +160,13 @@ const ManageCourses = () => {
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Course Name</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Category</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Students</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Lessons</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Last Updated</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.courseName')}</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.category')}</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.students')}</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.lessons')}</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.lastUpdated')}</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.status')}</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">{t('common.actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -193,24 +197,24 @@ const ManageCourses = () => {
                                                     <td className="px-6 py-4">
                                                         <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${isDraft ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
                                                             <span className={`size-1.5 rounded-full ${isDraft ? 'bg-amber-500' : 'bg-green-500'}`}></span>
-                                                            {isDraft ? 'Draft' : 'Published'}
+                                                            {isDraft ? t('admin.draft') : t('admin.published')}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 text-right space-x-1">
                                                         <Link to={`/detail/${course._id}`} className="p-2 text-slate-400 hover:text-primary transition-colors" title="View">
                                                             <span className="material-symbols-outlined text-[20px]">visibility</span>
                                                         </Link>
-                                                        <Link to={`/admin/edit_course/${course._id}`} className="p-2 text-slate-400 hover:text-primary transition-colors" title="Edit">
+                                                        <Link to={`/admin/edit_course/${course._id}`} className="p-2 text-slate-400 hover:text-primary transition-colors" title={t('common.edit')}>
                                                             <span className="material-symbols-outlined text-[20px]">edit</span>
                                                         </Link>
-                                                        <Link to={`/admin/lessons/${course._id}`} className="p-2 text-slate-400 hover:text-blue-500 transition-colors" title="Lessons">
+                                                        <Link to={`/admin/lessons/${course._id}`} className="p-2 text-slate-400 hover:text-blue-500 transition-colors" title={t('admin.lessons')}>
                                                             <span className="material-symbols-outlined text-[20px]">book_5</span>
                                                         </Link>
-                                                        <Link to={`/admin/course-progress/${course._id}`} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors" title="Students Progress">
+                                                        <Link to={`/admin/course-progress/${course._id}`} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors" title={t('admin.studentsProgress')}>
                                                             <span className="material-symbols-outlined text-[20px]">analytics</span>
                                                         </Link>
                                                         {isAdmin && (
-                                                            <button onClick={() => deleteCourse(course._id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Delete">
+                                                            <button onClick={() => deleteCourse(course._id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title={t('common.delete')}>
                                                                 <span className="material-symbols-outlined text-[20px]">delete</span>
                                                             </button>
                                                         )}
@@ -220,7 +224,7 @@ const ManageCourses = () => {
                                         })
                                     ) : (
                                         <tr>
-                                            <td colSpan="7" className="px-6 py-20 text-center text-slate-500 dark:text-slate-400">No courses found</td>
+                                            <td colSpan="7" className="px-6 py-20 text-center text-slate-500 dark:text-slate-400">{t('courses.noResults')}</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -228,7 +232,7 @@ const ManageCourses = () => {
                         </div>
                         <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800">
                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                                Showing <span className="font-bold text-slate-900 dark:text-white">{filteredCourses.length}</span> of <span className="font-bold text-slate-900 dark:text-white">{totalCourses}</span> courses
+                                {t('admin.showingOfCourses', { shown: filteredCourses.length, total: totalCourses })}
                             </p>
                         </div>
                     </div>

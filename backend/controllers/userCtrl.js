@@ -1,6 +1,8 @@
 const Users = require('../models/User');
 const Courses = require('../models/Course');
-const Payments = require('../models/Payment'); 
+const Payments = require('../models/Payment');
+const Progress = require('../models/Progress');
+const Review = require('../models/Review');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -127,10 +129,10 @@ const userCtrl = {
             const { name, email, password } = req.body;
 
             const user = await Users.findOne({ email });
-            if (user) return res.status(400).json({ msg: "Email này đã được đăng ký." });
+            if (user) return res.status(400).json({ msg: "This email is already registered." });
 
             if (password.length < 6)
-                return res.status(400).json({ msg: "Mật khẩu phải có ít nhất 6 ký tự." });
+                return res.status(400).json({ msg: "Password must be at least 6 characters long." });
 
             const passwordHash = await bcrypt.hash(password, 10);
             const newUser = new Users({
@@ -142,7 +144,7 @@ const userCtrl = {
             const access_token = createAccessToken({ id: newUser._id });
 
             res.json({
-                msg: "Đăng ký thành công!",
+                msg: "Registration successful!",
                 access_token,
                 user: { ...newUser._doc, password: '' }
             });
@@ -158,15 +160,15 @@ const userCtrl = {
             const { email, password } = req.body;
 
             const user = await Users.findOne({ email });
-            if (!user) return res.status(400).json({ msg: "Người dùng không tồn tại." });
+            if (!user) return res.status(400).json({ msg: "User does not exist." });
 
             const isMatch = await bcrypt.compare(password, user.password);
-            if (!isMatch) return res.status(400).json({ msg: "Mật khẩu không đúng." });
+            if (!isMatch) return res.status(400).json({ msg: "Incorrect password." });
 
             const access_token = createAccessToken({ id: user._id });
 
             res.json({
-                msg: "Đăng nhập thành công!",
+                msg: "Login successful!",
                 access_token,
                 user: {
                     id: user._id,
@@ -184,7 +186,7 @@ const userCtrl = {
     // dang xuat phien hien tai.
     logout: async (req, res) => {
         try {
-            return res.json({ msg: "Đã đăng xuất." });
+            return res.json({ msg: "Logged out." });
         } catch (err) {
             return res.status(500).json({ msg: err.message });
         }
@@ -214,7 +216,7 @@ const userCtrl = {
             }
 
             if (avatar.length > 4 * 1024 * 1024) {
-                return res.status(400).json({ msg: 'Ảnh đại diện quá lớn.' });
+                return res.status(400).json({ msg: 'Avatar is too large.' });
             }
 
             const updatedUser = await Users.findByIdAndUpdate(
@@ -244,7 +246,7 @@ const userCtrl = {
             const { cart } = req.body;
             await Users.findOneAndUpdate({ _id: req.user.id }, { cart });
 
-            return res.json({ msg: "Đã thêm vào giỏ hàng thành công!" });
+            return res.json({ msg: "Added to cart successfully!" });
         } catch (err) {
             return res.status(500).json({ msg: err.message });
         }
@@ -255,7 +257,7 @@ const userCtrl = {
         try {
             const user = await Users.findById(req.user.id);
             if (!user || user.cart.length === 0) 
-                return res.status(400).json({ msg: "Giỏ hàng rỗng." });
+                return res.status(400).json({ msg: "Cart is empty." });
 
             const newCourseIds = user.cart.map(item => item._id);
             
@@ -301,7 +303,7 @@ const userCtrl = {
             }
 
             return res.json({
-                msg: "Thanh toán thành công!",
+                msg: "Payment successful!",
                 subtotal: total,
                 discount,
                 couponCode,
@@ -324,7 +326,7 @@ const userCtrl = {
             const enrolledIds = new Set((user.enrolledCourses || []).map((id) => String(id)));
             const payableItems = cartItems.filter((item) => !enrolledIds.has(String(item?._id || '')));
             if (payableItems.length === 0) {
-                return res.status(400).json({ msg: 'Không có khóa học hợp lệ để thanh toán.' });
+                return res.status(400).json({ msg: 'No valid courses to pay for.' });
             }
 
             const subtotal = payableItems.reduce((sum, item) => sum + Number(item?.price || 0), 0);
@@ -503,7 +505,7 @@ const userCtrl = {
             const nextRole = Number(role);
 
             if (![0, 1, 2].includes(nextRole)) {
-                return res.status(400).json({ msg: 'Role không hợp lệ. Chỉ chấp nhận 0, 1, 2.' });
+                return res.status(400).json({ msg: 'Invalid role. Only 0, 1, 2 are accepted.' });
             }
 
             await Users.findOneAndUpdate(
@@ -512,6 +514,27 @@ const userCtrl = {
             );
             
             res.json({ msg: "Cập nhật quyền hạn thành công!" });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    // admin xoa tai khoan nguoi dung.
+    deleteUser: async (req, res) => {
+        try {
+            const userId = req.params.id;
+            if (!userId) return res.status(400).json({ msg: 'User id is required.' });
+
+            if (String(req.user.id) === String(userId)) {
+                return res.status(400).json({ msg: 'Cannot delete your own account.' });
+            }
+
+            await Users.findByIdAndDelete(userId);
+            await Progress.deleteMany({ userId });
+            await Review.deleteMany({ userId });
+            await Payments.deleteMany({ user_id: String(userId) });
+
+            res.json({ msg: 'Xóa tài khoản thành công.' });
         } catch (err) {
             return res.status(500).json({ msg: err.message });
         }
@@ -648,6 +671,63 @@ const userCtrl = {
                 },
                 courses: courseDetails
             });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    // tao tai khoan cho hoc vien hoac nhan vien (chi admin).
+    createUser: async (req, res) => {
+        try {
+            const { name, email, password, role } = req.body;
+
+            // validate input
+            if (!name || !email || !password || role === undefined) {
+                return res.status(400).json({ msg: "Name, email, password, and role are required." });
+            }
+
+            // check email exists
+            const existingUser = await Users.findOne({ email });
+            if (existingUser) {
+                return res.status(400).json({ msg: "This email is already registered." });
+            }
+
+            // validate password length
+            if (password.length < 6) {
+                return res.status(400).json({ msg: "Password must be at least 6 characters long." });
+            }
+
+            // validate role
+            const validRoles = [0, 1, 2]; // 0: student, 1: admin, 2: teacher
+            if (!validRoles.includes(Number(role))) {
+                return res.status(400).json({ msg: "Invalid role. Use 0 (student), 1 (admin), or 2 (teacher)." });
+            }
+
+            // hash password
+            const passwordHash = await bcrypt.hash(password, 10);
+
+            // create user without auto avatar
+            const newUser = new Users({
+                name,
+                email,
+                password: passwordHash,
+                role: Number(role),
+                enrolledCourses: []
+            });
+
+            await newUser.save();
+
+            return res.json({
+                msg: "User created successfully!",
+                user: {
+                    _id: newUser._id,
+                    name: newUser.name,
+                    email: newUser.email,
+                    role: newUser.role,
+                    avatar: newUser.avatar
+                }
+            });
+
         } catch (err) {
             return res.status(500).json({ msg: err.message });
         }

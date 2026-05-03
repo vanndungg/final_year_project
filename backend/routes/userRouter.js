@@ -66,6 +66,7 @@ router.get('/all_info', auth, authStaff, userCtrl.getUsersAllInfor);
 // 7. Cập nhật quyền (Admin/User)
 // Đường dẫn: PATCH /api/users/update_role/:id
 router.patch('/update_role/:id', auth, authAdmin, userCtrl.updateRole);
+router.delete('/delete_user/:id', auth, authAdmin, userCtrl.deleteUser);
 
 router.get('/admin_stats', auth, authAdmin, userCtrl.getAdminStats);
 
@@ -75,5 +76,9 @@ router.get('/successful_payments', auth, authAdmin, userCtrl.getSuccessfulPaymen
 // 8. Lay khoa hoc va tien do cua hoc vien
 // Duong dan: GET /api/users/student-courses/:studentId
 router.get('/student-courses/:studentId', auth, authStaff, userCtrl.getStudentCourses);
+
+// 9. Tao tai khoan moi (chi admin)
+// Duong dan: POST /api/users/create_user
+router.post('/create_user', auth, authAdmin, userCtrl.createUser);
 
 module.exports = router;

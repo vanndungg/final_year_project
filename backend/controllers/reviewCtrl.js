@@ -17,13 +17,13 @@ const reviewCtrl = {
             const hasPurchased = user.enrolledCourses.some(id => id.toString() === courseId);
             
             if (!hasPurchased) {
-                return res.status(400).json({ msg: "Bạn phải mua khóa học này trước khi đánh giá." });
+                return res.status(400).json({ msg: "You must purchase this course before reviewing." });
             }
 
             // 2. Kiểm tra xem đã đánh giá chưa
             const alreadyReviewed = await Reviews.findOne({ courseId, userId });
             if (alreadyReviewed) {
-                return res.status(400).json({ msg: "Bạn đã đánh giá khóa học này rồi." });
+                return res.status(400).json({ msg: "You have already reviewed this course." });
             }
 
             const newReview = new Reviews({
@@ -31,7 +31,7 @@ const reviewCtrl = {
             });
 
             await newReview.save();
-            res.json({ msg: "Cảm ơn bạn đã đánh giá!", newReview });
+            res.json({ msg: "Thank you for your review!", newReview });
         } catch (err) {
             return res.status(500).json({ msg: err.message });
         }
@@ -45,6 +45,23 @@ const reviewCtrl = {
                 .sort('-createdAt'); 
             
             res.json(reviews);
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    // lay danh gia moi nhat de hien thi ngoai trang chu.
+    getRecentReviews: async (req, res) => {
+        try {
+            const limit = Math.max(1, Math.min(12, Number(req.query.limit) || 3));
+            const reviews = await Reviews.find()
+                .populate('userId', 'name avatar')
+                .populate('courseId', 'title')
+                .sort({ createdAt: -1 })
+                .limit(limit)
+                .lean();
+
+            return res.json(reviews);
         } catch (err) {
             return res.status(500).json({ msg: err.message });
         }

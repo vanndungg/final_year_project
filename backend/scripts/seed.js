@@ -13,10 +13,6 @@ const Review = require('../models/Review');
 const Payment = require('../models/Payment');
 const Progress = require('../models/Progress');
 
-const STUDENT_COUNT = 5;
-const COURSE_COUNT = 5;
-const LESSONS_PER_COURSE = 5;
-
 const DEFAULT_PASSWORD = '123456';
 
 const ACCOUNT_SEEDS = {
@@ -25,47 +21,63 @@ const ACCOUNT_SEEDS = {
         email: 'admin@gmail.com',
         role: 1,
         avatar: 'https://i.pravatar.cc/200?img=12'
-    },
-    teacher: {
-        name: 'Teacher EduLearn',
-        email: 'teacher@gmail.com',
-        role: 2,
-        avatar: 'https://i.pravatar.cc/200?img=32'
     }
 };
 
+const TEACHERS = [
+    { name: 'Nguyễn Thành Công', nationality: 'vi' },
+    { name: 'Trần Minh Hương', nationality: 'vi' },
+    { name: 'Lê Văn An', nationality: 'vi' },
+    { name: 'Phạm Bảo Nam', nationality: 'vi' },
+    { name: 'Bùi Thị Lan', nationality: 'vi' },
+    { name: 'Anna Müller', nationality: 'de' },
+    { name: 'John Smith', nationality: 'us' },
+    { name: 'Sophia Davis', nationality: 'us' },
+    { name: 'Emma Johansson', nationality: 'se' },
+    { name: 'Carlos Fernandez', nationality: 'es' }
+];
+
 const COURSE_CATEGORIES = ['Development', 'Design & Creative', 'Marketing', 'Business', 'Data'];
-const COURSE_LEVELS = ['beginner', 'intermediate', 'advanced', 'all-levels', 'beginner'];
-const LESSON_TYPE_SEQUENCE = ['video', 'document', 'quiz', 'assignment', 'video'];
+const COURSE_LEVELS = ['beginner', 'intermediate', 'advanced', 'all-levels'];
+const LESSON_TYPES = ['video', 'document', 'quiz', 'assignment'];
 
 const REVIEW_COMMENTS = [
-    'Noi dung de hieu, hoc xong ung dung duoc ngay.',
-    'Bai giang chi tiet, dan dat logic.',
-    'Quiz va assignment rat huu ich.',
-    'Phu hop cho nguoi moi bat dau.',
-    'Chat luong on dinh, dang hoc tiep cac khoa khac.'
+    'Khóa học rất hữu ích, dễ hiểu và ứng dụng được ngay vào thực tế.',
+    'Giáo viên giảng dạy tuyệt vời, từng bước từng chi tiết rất rõ ràng.',
+    'Bài tập và quiz giúp tôi vạch rõ những điểm yếu trong kỹ năng của mình.',
+    'Phù hợp cho người mới bắt đầu, cấu trúc bài học rất logic và khoa học.',
+    'Chất lượng nội dung ổn định, sẽ tiếp tục học các khóa khác của giáo viên này.'
 ];
 
 const QUIZ_QUESTION_BANK = [
     {
-        question: 'Muc tieu chinh cua bai hoc nay la gi?',
-        options: ['Nam vung khai niem co ban', 'Ghi nho ly thuyet thuong mai', 'Doc them tai lieu ngoai'],
+        question: 'What is the main objective of this lesson?',
+        options: ['Understand core concepts', 'Memorize theory', 'Read additional documents'],
         correctOptionIndex: 0
     },
     {
-        question: 'Buoc nao nen lam truoc khi thuc hanh?',
-        options: ['Doc huong dan', 'Lam bai tap ngay', 'Bo qua phan gioi thieu'],
+        question: 'Which step should you take before practicing?',
+        options: ['Read the guide carefully', 'Start exercises immediately', 'Skip the introduction'],
         correctOptionIndex: 0
     },
     {
-        question: 'Chi so nao dung de danh gia ket qua?',
-        options: ['Muc do hoan thanh', 'So lan click', 'Mau sac giao dien'],
+        question: 'What is the correct metric to evaluate results?',
+        options: ['Completion rate', 'Number of clicks', 'Interface color'],
+        correctOptionIndex: 0
+    },
+    {
+        question: 'How do you implement best practices in your code?',
+        options: ['Follow conventions and principles', 'Write code quickly', 'Use any approach that works'],
+        correctOptionIndex: 0
+    },
+    {
+        question: 'What is a key benefit of code documentation?',
+        options: ['Helps others understand your code', 'Makes code run faster', 'Reduces file size'],
         correctOptionIndex: 0
     }
 ];
-// tra ve so ngau nhien trong khoang min den max.
+
 const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-// tron mang ngau nhien theo thuat toan Fisher-Yates.
 const shuffle = (arr) => {
     const cloned = [...arr];
     for (let i = cloned.length - 1; i > 0; i -= 1) {
@@ -74,7 +86,7 @@ const shuffle = (arr) => {
     }
     return cloned;
 };
-// tao danh sach cau hoi quiz ngau nhien cho lesson.
+
 const buildQuizQuestions = () => {
     const questions = shuffle(QUIZ_QUESTION_BANK).slice(0, randomInt(2, 3));
     return questions.map((item) => ({
@@ -83,66 +95,7 @@ const buildQuizQuestions = () => {
         correctOptionIndex: item.correctOptionIndex
     }));
 };
-// tao du lieu lesson theo tung loai noi dung.
-const buildLessonPayload = (course, lessonIndex) => {
-    const lessonType = LESSON_TYPE_SEQUENCE[lessonIndex - 1] || 'video';
 
-    const commonPayload = {
-        title: `Lesson ${lessonIndex}: ${course.title}`,
-        description: `Noi dung tong quan cho lesson ${lessonIndex} cua ${course.title}.`,
-        lessonType,
-        courseId: course._id,
-        order: lessonIndex,
-        publishStatus: 'publish',
-        isPreview: false,
-        isDownloadable: false,
-        notifyOnPublish: false,
-        requireCompletion: false,
-        dripDays: Math.max(0, lessonIndex - 1),
-        durationMinutes: randomInt(8, 24),
-        thumbnail: `https://picsum.photos/seed/${course._id.toString().slice(-6)}-lesson-${lessonIndex}/1280/720`
-    };
-
-    if (lessonType === 'video') {
-        return {
-            ...commonPayload,
-            isPreview: lessonIndex === 1,
-            video_id: lessonIndex === 1 ? 'RGKi6LSPDLU' : 'TNhaISOUy6Q',
-            videoUrl: '',
-            videoUploadData: '',
-            videoUploadName: ''
-        };
-    }
-
-    if (lessonType === 'document') {
-        return {
-            ...commonPayload,
-            content: `<p><strong>Document Lesson ${lessonIndex}</strong></p><p>Day la noi dung tai lieu mau cho ${course.title}.</p><p><span style="font-size:18px;">Phan noi dung nhan manh.</span></p>`,
-            resourceUrl: ''
-        };
-    }
-
-    if (lessonType === 'quiz') {
-        const quizQuestions = buildQuizQuestions();
-        return {
-            ...commonPayload,
-            quizQuestions,
-            quizQuestionCount: quizQuestions.length,
-            quizPassingScore: randomInt(70, 85),
-            quizTimeLimitMinutes: randomInt(10, 20),
-            quizAttemptsAllowed: randomInt(1, 2)
-        };
-    }
-
-    return {
-        ...commonPayload,
-        content: `Assignment question: Hay trinh bay cach ban ap dung kien thuc tu ${course.title} vao du an thuc te.`,
-        assignmentMaxPoints: 100,
-        assignmentDeadline: new Date(Date.now() + randomInt(5, 15) * 24 * 60 * 60 * 1000),
-        allowLateSubmission: false
-    };
-};
-// tao du lieu payment da thanh toan cho hoc vien va khoa hoc.
 const buildPaymentPayload = ({ student, course }) => {
     const createdAt = new Date(Date.now() - randomInt(1, 20) * 24 * 60 * 60 * 1000);
     const total = Number(course.price || 0);
@@ -167,7 +120,13 @@ const buildPaymentPayload = ({ student, course }) => {
         updatedAt: createdAt
     };
 };
-// reset database va seed du lieu mau cho he thong.
+
+const getTeacherAvatar = (index) => `https://i.pravatar.cc/200?img=${20 + index}`;
+const getStudentAvatar = (index) => `https://i.pravatar.cc/200?img=${50 + index}`;
+const getCourseTitle = (teacher, index) => `${teacher.name.split(' ')[0]} Course ${index + 1}`;
+const getCourseDescription = (teacher, index) => `Khóa học toàn diện từ giảng viên ${teacher.name} với nội dung bài bản và thực tiễn. Bao gồm video giải thích chi tiết, tài liệu hỗ trợ, bài kiểm tra để đánh giá kiến thức, và bài tập thực hành để áp dụng kỹ năng. Phù hợp cho cả người mới bắt đầu và những người muốn nâng cao kỹ năng.`;
+const getRandomCoursePrice = (index) => 150000 + index * 15000;
+
 const seedData = async () => {
     let connected = false;
 
@@ -180,7 +139,7 @@ const seedData = async () => {
         await mongoose.connect(uri);
         connected = true;
 
-        console.log('Bat dau reset va seed du lieu test...');
+        console.log('Bat dau reset va seed du lieu mau...');
 
         await Promise.all([
             Progress.deleteMany({}),
@@ -193,7 +152,7 @@ const seedData = async () => {
 
         const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 
-        const admin = await User.create({
+        await User.create({
             name: ACCOUNT_SEEDS.admin.name,
             email: ACCOUNT_SEEDS.admin.email,
             password: passwordHash,
@@ -201,49 +160,116 @@ const seedData = async () => {
             avatar: ACCOUNT_SEEDS.admin.avatar
         });
 
-        const teacher = await User.create({
-            name: ACCOUNT_SEEDS.teacher.name,
-            email: ACCOUNT_SEEDS.teacher.email,
-            password: passwordHash,
-            role: ACCOUNT_SEEDS.teacher.role,
-            avatar: ACCOUNT_SEEDS.teacher.avatar
-        });
+        const teacherUsers = await User.insertMany(
+            TEACHERS.map((teacher, index) => ({
+                name: teacher.name,
+                email: `teacher${index + 1}@gmail.com`,
+                password: passwordHash,
+                role: 2,
+                avatar: getTeacherAvatar(index),
+                enrolledCourses: []
+            }))
+        );
 
-        const studentPayloads = Array.from({ length: STUDENT_COUNT }, (_, index) => ({
-            name: `Hoc vien ${index + 1}`,
-            email: `student${index + 1}@gmail.com`,
-            password: passwordHash,
-            role: 0,
-            avatar: `https://i.pravatar.cc/200?img=${50 + index}`,
-            enrolledCourses: []
-        }));
+        const studentUsers = await User.insertMany(
+            Array.from({ length: 10 }, (_, index) => ({
+                name: `Hoc vien ${index + 1}`,
+                email: `student${index + 1}@gmail.com`,
+                password: passwordHash,
+                role: 0,
+                avatar: getStudentAvatar(index),
+                enrolledCourses: []
+            }))
+        );
 
-        const students = await User.insertMany(studentPayloads);
-
-        const coursePayloads = Array.from({ length: COURSE_COUNT }, (_, index) => {
-            const isFree = index % 3 === 0;
-            return {
-                title: `Khoa hoc test ${index + 1}`,
-                description: `Mo ta tong quan cho khoa hoc test ${index + 1}.`,
-                category: COURSE_CATEGORIES[index % COURSE_CATEGORIES.length],
-                image: `https://picsum.photos/seed/course-${index + 1}/800/500`,
-                status: 'publish',
-                pricingType: isFree ? 'free' : 'paid',
-                price: isFree ? 0 : 300000 + index * 50000,
-                currency: 'VND',
-                teacher: teacher.name,
-                visibility: 'public',
-                level: COURSE_LEVELS[index % COURSE_LEVELS.length]
-            };
+        const coursePayloads = [];
+        teacherUsers.forEach((teacher, teacherIndex) => {
+            for (let courseIndex = 0; courseIndex < 2; courseIndex += 1) {
+                const courseNumber = teacherIndex * 2 + courseIndex + 1;
+                const isFree = courseNumber % 4 === 0;
+                coursePayloads.push({
+                    title: getCourseTitle(teacher, courseIndex),
+                    description: getCourseDescription(teacher, courseIndex),
+                    category: COURSE_CATEGORIES[courseNumber % COURSE_CATEGORIES.length],
+                    image: `https://picsum.photos/seed/course-${courseNumber}/800/500`,
+                    status: 'publish',
+                    pricingType: isFree ? 'free' : 'paid',
+                    price: isFree ? 0 : getRandomCoursePrice(courseNumber),
+                    currency: 'VND',
+                    teacher: teacher.name,
+                    visibility: 'public',
+                    level: COURSE_LEVELS[courseNumber % COURSE_LEVELS.length]
+                });
+            }
         });
 
         const courses = await Course.insertMany(coursePayloads);
 
         const allLessonPayloads = [];
         courses.forEach((course) => {
-            for (let lessonIndex = 1; lessonIndex <= LESSONS_PER_COURSE; lessonIndex += 1) {
-                allLessonPayloads.push(buildLessonPayload(course, lessonIndex));
-            }
+            const lessonCount = randomInt(4, 10);
+            const requiredTypes = [...LESSON_TYPES];
+            const extraTypes = Array.from({ length: Math.max(0, lessonCount - requiredTypes.length) }, () => LESSON_TYPES[randomInt(0, LESSON_TYPES.length - 1)]);
+            const lessonTypes = shuffle([...requiredTypes, ...extraTypes]);
+
+            lessonTypes.forEach((lessonType, lessonIndex) => {
+                const basePayload = {
+                    title: `Lesson ${lessonIndex + 1}: ${course.title}`,
+                    description: `Learn key concepts and practical skills for ${course.title}. This lesson covers important topics with examples and exercises.`,
+                    lessonType,
+                    courseId: course._id,
+                    order: lessonIndex + 1,
+                    publishStatus: 'publish',
+                    isPreview: lessonIndex === 0,
+                    isDownloadable: false,
+                    notifyOnPublish: false,
+                    requireCompletion: false,
+                    dripDays: Math.max(0, lessonIndex),
+                    durationMinutes: randomInt(8, 24),
+                    thumbnail: `https://picsum.photos/seed/${course._id.toString().slice(-6)}-lesson-${lessonIndex + 1}/1280/720`
+                };
+
+                if (lessonType === 'video') {
+                    allLessonPayloads.push({
+                        ...basePayload,
+                        video_id: lessonIndex === 0 ? 'RGKi6LSPDLU' : 'TNhaISOUy6Q',
+                        videoUrl: '',
+                        videoUploadData: '',
+                        videoUploadName: ''
+                    });
+                    return;
+                }
+
+                if (lessonType === 'document') {
+                    allLessonPayloads.push({
+                        ...basePayload,
+                        content: `<h2>Document Lesson ${lessonIndex + 1}</h2><p>This document covers essential concepts and best practices related to ${course.title}. Study the following key points carefully:</p><ul><li>Understand fundamental principles</li><li>Learn practical applications</li><li>Review common mistakes and how to avoid them</li><li>Practice with real-world examples</li></ul><p><strong>Remember:</strong> Mastering these concepts will help you succeed in this course.</p>`,
+                        resourceUrl: ''
+                    });
+                    return;
+                }
+
+                if (lessonType === 'quiz') {
+                    const quizQuestions = buildQuizQuestions();
+                    allLessonPayloads.push({
+                        ...basePayload,
+                        quizQuestions,
+                        quizQuestionCount: quizQuestions.length,
+                        quizPassingScore: randomInt(70, 85),
+                        quizTimeLimitMinutes: randomInt(10, 20),
+                        quizAttemptsAllowed: randomInt(1, 2)
+                    });
+                    return;
+                }
+
+                allLessonPayloads.push({
+                    ...basePayload,
+                    content: `<h2>Assignment: Apply Your Knowledge</h2><p>For this assignment, please complete the following task:</p><p><strong>Task:</strong> Demonstrate how to apply the concepts from ${course.title} to a real-world project. Include:</p><ul><li>Problem description and context</li><li>Your approach and solution</li><li>Code examples or documentation</li><li>Challenges faced and how you overcame them</li><li>Results and what you learned</li></ul><p>Submit your work as a document or code repository with clear explanations.</p>`,
+                    assignmentMaxPoints: 100,
+                    assignmentDeadline: new Date(Date.now() + randomInt(5, 15) * 24 * 60 * 60 * 1000),
+                    allowLateSubmission: false
+                });
+            });
         });
 
         const lessons = await Lesson.insertMany(allLessonPayloads);
@@ -257,44 +283,33 @@ const seedData = async () => {
             lessonsByCourseMap.get(key).push(lesson);
         });
 
+        const courseIds = courses.map((course) => course._id);
+        const progressDocuments = [];
         const payments = [];
         const reviews = [];
-        const progresses = [];
-        const studentCourseMap = new Map(students.map((student) => [String(student._id), new Set()]));
 
-        for (const course of courses) {
-            const courseLessons = lessonsByCourseMap.get(String(course._id)) || [];
-            const assignmentLesson = courseLessons.find((lesson) => lesson.lessonType === 'assignment');
+        for (const student of studentUsers) {
+            const selectedCourses = shuffle(courseIds).slice(0, 5);
+            student.enrolledCourses = selectedCourses;
+            await student.save();
 
-            const enrolledCount = randomInt(3, 5);
-            const enrolledStudents = shuffle(students).slice(0, enrolledCount);
-
-            for (const student of enrolledStudents) {
-                studentCourseMap.get(String(student._id)).add(course._id);
-
-                const completedCandidates = shuffle(courseLessons).slice(0, randomInt(1, 2)).map((lesson) => lesson._id);
+            for (const courseId of selectedCourses) {
+                const course = courses.find((item) => String(item._id) === String(courseId));
+                const courseLessons = shuffle(lessonsByCourseMap.get(String(courseId)) || []);
+                const completedCount = randomInt(1, Math.max(1, courseLessons.length - 1));
+                const completedLessons = courseLessons.slice(0, completedCount).map((lesson) => lesson._id);
+                const assignmentLesson = courseLessons.find((lesson) => lesson.lessonType === 'assignment');
                 const assignmentSubmissions = [];
 
-                if (assignmentLesson && Math.random() > 0.35) {
+                if (assignmentLesson && Math.random() > 0.4) {
                     assignmentSubmissions.push({
                         lessonId: assignmentLesson._id,
                         answer: `Bai nop mau cua ${student.name} cho ${course.title}.`,
-                        submittedAt: new Date(Date.now() - randomInt(1, 7) * 24 * 60 * 60 * 1000)
+                        submittedAt: new Date(Date.now() - randomInt(1, 10) * 24 * 60 * 60 * 1000)
                     });
                 }
 
-                const completedLessons = [];
-                const completedLessonIds = new Set();
-
-                [...completedCandidates, ...(assignmentSubmissions.length > 0 && assignmentLesson ? [assignmentLesson._id] : [])]
-                    .forEach((lessonId) => {
-                        const normalizedId = String(lessonId || '');
-                        if (!normalizedId || completedLessonIds.has(normalizedId)) return;
-                        completedLessonIds.add(normalizedId);
-                        completedLessons.push(lessonId);
-                    });
-
-                progresses.push({
+                progressDocuments.push({
                     userId: student._id,
                     courseId: course._id,
                     completedLessons,
@@ -302,46 +317,32 @@ const seedData = async () => {
                 });
 
                 payments.push(buildPaymentPayload({ student, course }));
+
+                if (Math.random() > 0.3) {
+                    reviews.push({
+                        courseId: course._id,
+                        userId: student._id,
+                        rating: randomInt(4, 5),
+                        comment: REVIEW_COMMENTS[randomInt(0, REVIEW_COMMENTS.length - 1)]
+                    });
+                }
             }
-
-            const reviewCount = randomInt(1, 3);
-            const reviewStudents = shuffle(enrolledStudents).slice(0, reviewCount);
-
-            reviewStudents.forEach((student, reviewIndex) => {
-                reviews.push({
-                    courseId: course._id,
-                    userId: student._id,
-                    rating: randomInt(4, 5),
-                    comment: REVIEW_COMMENTS[(reviewIndex + randomInt(0, REVIEW_COMMENTS.length - 1)) % REVIEW_COMMENTS.length]
-                });
-            });
         }
 
         await Promise.all([
-            User.bulkWrite(
-                [...studentCourseMap.entries()].map(([studentId, enrolledSet]) => ({
-                    updateOne: {
-                        filter: { _id: studentId },
-                        update: { $set: { enrolledCourses: [...enrolledSet] } }
-                    }
-                }))
-            ),
-            Progress.insertMany(progresses),
+            Progress.insertMany(progressDocuments),
             Payment.insertMany(payments),
             Review.insertMany(reviews)
         ]);
 
         console.log('-----------------------------------------');
-        console.log('Seed thanh cong voi du lieu test nho gon:');
+        console.log('Seed thanh cong voi du lieu mau:');
         console.log(`- Admin: ${ACCOUNT_SEEDS.admin.email} / ${DEFAULT_PASSWORD}`);
-        console.log(`- Teacher: ${ACCOUNT_SEEDS.teacher.email} / ${DEFAULT_PASSWORD}`);
-        console.log(`- Student mau: student1@gmail.com / ${DEFAULT_PASSWORD}`);
-        console.log(`- ${STUDENT_COUNT} tai khoan hoc vien`);
-        console.log('- 5 khoa hoc (moi khoa 3-5 hoc vien)');
-        console.log('- Moi khoa hoc co 5 lessons');
-        console.log('- Quiz lesson co bo cau hoi + dap an dung');
-        console.log('- Assignment lesson co cau hoi va mot phan du lieu nop bai mau');
-        console.log('- Moi khoa hoc co 1-3 reviews (schema hien tai review theo course)');
+        console.log(`- ${teacherUsers.length} giang vien (Viet Nam + nuoc ngoai)`);
+        console.log(`- ${studentUsers.length} hoc vien, moi hoc vien dang ky 5 khoa hoc`);
+        console.log(`- ${courses.length} khoa hoc (2 khoa hoc/giang vien)`);
+        console.log(`- Moi khoa hoc co tu 4 den 10 lesson voi cac loai video, document, quiz, assignment`);
+        console.log('- Du lieu bao gom progress, payment va review mau');
         console.log('-----------------------------------------');
     } catch (error) {
         console.error('Loi seed data:', error.message);

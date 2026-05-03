@@ -1,6 +1,7 @@
 
 
 import React, { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 import { GlobalState } from '../../../app/providers/GlobalState';
 // tra ve nhan role de hien thi trong sidebar admin.
@@ -40,6 +41,8 @@ const AdminPanelLayout = ({ children }) => {
     const isStaffAccountsActive = pathname.startsWith('/admin/staff-accounts');
     const isPaymentsActive = pathname.startsWith('/admin/payments');
 
+    const { t } = useTranslation();
+    const [language, changeLanguage] = state?.language || ['en', () => {}];
     const accountName = user?.name || 'Admin';
     const accountRole = getRoleLabel(user?.role);
     const accountAvatar = user?.avatar || 'https://via.placeholder.com/48';
@@ -52,41 +55,59 @@ const AdminPanelLayout = ({ children }) => {
                         <span className="material-symbols-outlined text-3xl font-bold">school</span>
                         <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">EduLearn</h1>
                     </Link>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Admin Panel</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">{t('admin.panel')}</p>
                 </div>
 
                 <nav className="flex-1 px-4 py-4 space-y-1">
                     <Link to="/" className={buildNavItemClassName(false)}>
                         <span className="material-symbols-outlined">home</span>
-                        <span className="text-sm font-semibold">Home</span>
+                        <span className="text-sm font-semibold">{t('header.home')}</span>
                     </Link>
                     {isAdmin && (
                         <Link to="/admin/dashboard" className={buildNavItemClassName(isDashboardActive)}>
                             <span className="material-symbols-outlined">dashboard</span>
-                            <span className="text-sm font-semibold">Dashboard</span>
+                            <span className="text-sm font-semibold">{t('admin.dashboard')}</span>
                         </Link>
                     )}
                     <Link to="/admin/courses" className={buildNavItemClassName(isCoursesActive)}>
                         <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>book_2</span>
-                        <span className="text-sm font-semibold">Courses</span>
+                        <span className="text-sm font-semibold">{t('header.courses')}</span>
                     </Link>
                     <Link to="/admin/users" className={buildNavItemClassName(isStudentsActive)}>
                         <span className="material-symbols-outlined">school</span>
-                        <span className="text-sm font-semibold">Students</span>
+                        <span className="text-sm font-semibold">{t('admin.students')}</span>
                     </Link>
                     {isAdmin && (
                         <Link to="/admin/staff-accounts" className={buildNavItemClassName(isStaffAccountsActive)}>
                             <span className="material-symbols-outlined">admin_panel_settings</span>
-                            <span className="text-sm font-semibold">Staff Accounts</span>
+                            <span className="text-sm font-semibold">{t('admin.staffAccounts')}</span>
                         </Link>
                     )}
                     {isAdmin && (
                         <Link to="/admin/payments" className={buildNavItemClassName(isPaymentsActive)}>
                             <span className="material-symbols-outlined">receipt_long</span>
-                            <span className="text-sm font-semibold">Payments</span>
+                            <span className="text-sm font-semibold">{t('admin.managePayments')}</span>
                         </Link>
                     )}
                 </nav>
+
+                <div className="px-4 py-4 border-t border-slate-100 dark:border-slate-800">
+                    <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">{t('header.language')}</p>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => changeLanguage('en')}
+                            className={`px-3 py-1 rounded-md text-xs font-medium transition ${language === 'en' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'}`}
+                        >
+                            EN
+                        </button>
+                        <button
+                            onClick={() => changeLanguage('vi')}
+                            className={`px-3 py-1 rounded-md text-xs font-medium transition ${language === 'vi' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'}`}
+                        >
+                            VI
+                        </button>
+                    </div>
+                </div>
 
                 <div className="p-4 border-t border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-3 p-2">

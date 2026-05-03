@@ -29,7 +29,7 @@ function Register() {
                 password: user.password 
             });
 
-            toast.success("Đăng ký tài khoản thành công! 🎉");
+            toast.success("Account registered successfully! 🎉");
             
             // chuyen sang trang dang nhap sau khi dang ky xong.
             navigate('/login');
@@ -41,7 +41,7 @@ function Register() {
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
             <div className="max-w-md w-full bg-white rounded-xl shadow-xl p-8 border border-gray-100">
-                <h2 className="text-3xl font-extrabold text-center text-gray-800 mb-6">Tạo tài khoản</h2>
+                <h2 className="text-3xl font-extrabold text-center text-gray-800 mb-6">Create account</h2>
                 
                 <form onSubmit={registerSubmit} className="space-y-4">
                     <div>
@@ -88,14 +88,14 @@ function Register() {
                         type="submit"
                         className="w-full py-3 mt-4 text-white bg-green-600 hover:bg-green-700 rounded-lg font-bold shadow-md transition-all uppercase"
                     >
-                        Đăng ký ngay
+                        Register now
                     </button>
                 </form>
                 
                 <p className="mt-6 text-center text-sm text-gray-600">
-                    Đã có tài khoản?{' '}
+                    Already have an account?{' '}
                     <Link to="/login" className="text-blue-600 font-bold hover:underline">
-                        Đăng nhập
+                        Login
                     </Link>
                 </p>
             </div>

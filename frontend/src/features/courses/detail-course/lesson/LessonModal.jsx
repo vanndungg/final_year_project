@@ -1,6 +1,7 @@
 
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { getYoutubeEmbedUrl, normalizeLessonType } from './LessonUtils';
 import VideoLessonContent from './video/VideoContent';
 import DocumentLessonContent from './document/DocumentContent';
@@ -22,6 +23,8 @@ const LessonModal = ({
     getLessonPrimaryActionLabel,
     getAssignmentSubmission
 }) => {
+    const { t } = useTranslation();
+
     if (!activeLesson) return null;
 
     return (
@@ -39,7 +42,7 @@ const LessonModal = ({
                                 if (isSubmissionLesson && isLessonCompleted(activeLesson._id)) {
                                     return (
                                         <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                                            Da nop bai
+                                            {t('detail.lessonStatus.submitted')}
                                         </span>
                                     );
                                 }
@@ -47,7 +50,7 @@ const LessonModal = ({
                                 if (!isSubmissionLesson && isLessonCompleted(activeLesson._id)) {
                                     return (
                                         <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                                            Da hoan thanh
+                                            {t('detail.lessonStatus.completed')}
                                         </span>
                                     );
                                 }
@@ -56,7 +59,7 @@ const LessonModal = ({
                             })()}
                             {normalizeLessonType(activeLesson.lessonType) === 'assignment' && getAssignmentSubmission(activeLesson._id) && (
                                 <span className="rounded-full bg-violet-100 px-3 py-1 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
-                                    Da nop bai
+                                    {t('detail.lessonStatus.submitted')}
                                 </span>
                             )}
                         </div>
@@ -98,7 +101,7 @@ const LessonModal = ({
                         disabled={submittingAssignment}
                         className={`w-full rounded-lg px-4 py-3 text-sm font-bold text-white transition ${isLessonCompleted(activeLesson._id) ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'} disabled:opacity-60`}
                     >
-                        {submittingAssignment ? 'Dang xu ly...' : getLessonPrimaryActionLabel()}
+                        {submittingAssignment ? t('detail.submitting') : getLessonPrimaryActionLabel()}
                     </button>
                 </div>
             </div>

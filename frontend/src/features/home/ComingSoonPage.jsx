@@ -2,18 +2,20 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 // hien thi trang thong bao tinh nang dang duoc phat trien.
 const ComingSoon = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState(null);
   // xu ly form dang ky nhan thong bao khi tinh nang san sang.
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!email.trim()) {
-      setStatus({ type: 'error', message: 'Vui lòng nhập email để nhận thông báo.' });
+      setStatus({ type: 'error', message: t('comingSoon.emailRequired') });
       return;
     }
-    setStatus({ type: 'success', message: 'Cảm ơn bạn! Chúng tôi sẽ thông báo khi tính năng sẵn sàng.' });
+      setStatus({ type: 'success', message: t('comingSoon.thanksMessage') });
     setEmail('');
   };
 
@@ -37,14 +39,14 @@ const ComingSoon = () => {
         <div className="space-y-6 max-w-2xl">
           <div className="space-y-2">
             <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-bold tracking-wide uppercase">
-              Sắp ra mắt
+              {t('comingSoon.badge')}
             </span>
             <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white leading-tight">
-              Tính năng này đang được phát triển
+              {t('comingSoon.title')}
             </h1>
           </div>
           <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 leading-relaxed">
-            Chúng tôi đang nỗ lực hoàn thiện từng chi tiết để mang đến cho bạn trải nghiệm học tập hiện đại và hiệu quả nhất. Hãy quay lại sớm nhé!
+            {t('comingSoon.description')}
           </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
@@ -53,14 +55,14 @@ const ComingSoon = () => {
               className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-amber-500 text-white font-bold text-lg shadow-lg shadow-amber-300 hover:bg-amber-600 transition-all hover:-translate-y-1"
             >
               <span className="material-symbols-outlined mr-2">home</span>
-              Quay lại trang chủ
+              {t('comingSoon.backHome')}
             </Link>
             <button
               type="submit"
               className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold text-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
             >
               <span className="material-symbols-outlined mr-2">mail</span>
-              Nhận thông báo
+              {t('comingSoon.notifyButton')}
             </button>
           </form>
 
@@ -78,7 +80,7 @@ const ComingSoon = () => {
 
           <div className="mt-20 w-full max-w-lg mx-auto">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-semibold text-slate-500">Tiến độ hoàn thiện</span>
+              <span className="text-sm font-semibold text-slate-500">{t('comingSoon.progressLabel')}</span>
               <span className="text-sm font-bold text-primary">85%</span>
             </div>
             <div className="w-full bg-amber-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden">

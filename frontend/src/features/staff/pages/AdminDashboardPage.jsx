@@ -1,6 +1,7 @@
 
 
 import React, { useContext, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GlobalState } from '../../../app/providers/GlobalState';
 import axiosClient from '../../../shared/api/axiosClient';
 import { Link } from 'react-router-dom';
@@ -10,6 +11,7 @@ import { getStudentCount } from '../../../shared/utils/courseDataUtils';
 const formatRevenue = (value) => `${Number(value || 0).toLocaleString()}đ`;
 // hien thi tong quan so lieu cua khu vuc admin.
 const AdminDashboard = () => {
+    const { t } = useTranslation();
     const state = useContext(GlobalState);
     const [courses = []] = state?.coursesAPI?.courses || [[]];
     const [token = ''] = state?.token || [''];
@@ -129,8 +131,8 @@ const AdminDashboard = () => {
         <AdminPanelLayout>
             <div className="p-8 space-y-8">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard Overview</h2>
-                    <p className="text-slate-500">Welcome back, {accountName}. Here's a summary of your platform's performance.</p>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('admin.dashboardOverview')}</h2>
+                    <p className="text-slate-500">{t('admin.welcomeBack', { name: accountName })}</p>
                 </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -140,7 +142,7 @@ const AdminDashboard = () => {
                                 </div>
                                 <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-full">+12%</span>
                             </div>
-                            <p className="text-slate-500 text-sm font-medium">Total Courses</p>
+                            <p className="text-slate-500 text-sm font-medium">{t('admin.totalCourses')}</p>
                             <h3 className="text-2xl font-bold mt-1">{courses.length}</h3>
                         </div>
                         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -150,7 +152,7 @@ const AdminDashboard = () => {
                                 </div>
                                 <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-full">+0.2%</span>
                             </div>
-                            <p className="text-slate-500 text-sm font-medium">Average Rating</p>
+                            <p className="text-slate-500 text-sm font-medium">{t('admin.averageRating')}</p>
                             <h3 className="text-2xl font-bold mt-1">{averageRating}/5</h3>
                         </div>
                         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -160,7 +162,7 @@ const AdminDashboard = () => {
                                 </div>
                                 <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-full">+18%</span>
                             </div>
-                            <p className="text-slate-500 text-sm font-medium">Total Students</p>
+                            <p className="text-slate-500 text-sm font-medium">{t('admin.totalStudents')}</p>
                             <h3 className="text-2xl font-bold mt-1">{loading ? "..." : dataStats.students.toLocaleString()}</h3>
                         </div>
                         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -170,25 +172,25 @@ const AdminDashboard = () => {
                                 </div>
                                 <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-full">+24%</span>
                             </div>
-                            <p className="text-slate-500 text-sm font-medium">Total Revenue</p>
+                            <p className="text-slate-500 text-sm font-medium">{t('admin.totalRevenue')}</p>
                             <h3 className="text-2xl font-bold mt-1">{loading ? '...' : `${Number(dataStats.revenue || 0).toLocaleString()}đ`}</h3>
                         </div>
                     </div>
                     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                         <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                            <h4 className="text-lg font-bold">Recent Course Performance</h4>
-                            <Link to="/admin/courses" className="text-primary text-sm font-semibold hover:underline">View All Courses</Link>
+                            <h4 className="text-lg font-bold">{t('admin.recentCoursePerformance')}</h4>
+                            <Link to="/admin/courses" className="text-primary text-sm font-semibold hover:underline">{t('admin.viewAllCourses')}</Link>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead className="bg-slate-50 dark:bg-slate-800/50">
                                     <tr>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Course Name</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Category</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Students Enrolled</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Revenue</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Rating</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Lesson</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.courseName')}</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.category')}</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.studentsEnrolled')}</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.revenue')}</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.rating')}</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('admin.lesson')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -205,7 +207,7 @@ const AdminDashboard = () => {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-slate-500">{course.category || 'Development'}</td>
+                                            <td className="px-6 py-4 text-slate-500">{course.category || t('admin.categoryDefault')}</td>
                                             <td className="px-6 py-4 font-semibold">{getActualStudentCount(course).toLocaleString()}</td>
                                             <td className="px-6 py-4 font-semibold text-emerald-600 dark:text-emerald-400">{formatRevenue(getCourseRevenue(course))}</td>
                                             <td className="px-6 py-4">

@@ -3,14 +3,19 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { GlobalState } from '../../app/providers/GlobalState';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 // hien thi thanh header, tim kiem, gio hang va menu tai khoan.
 function Header() {
+    const { t } = useTranslation();
     const state = useContext(GlobalState);
     const location = useLocation();
     const navigate = useNavigate();
     const searchInputRef = useRef(null);
     const accountMenuRef = useRef(null);
     const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+    const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+    const [lastScrollY, setLastScrollY] = useState(0);
 
     const userAPI = state?.userAPI;
     const [isLogged, setIsLogged] = userAPI?.isLogged || [false, () => {}];
@@ -22,10 +27,10 @@ function Header() {
 
     const accountRoleLabel = useMemo(() => {
         const role = Number(user?.role);
-        if (role === 1) return 'Admin';
-        if (role === 2) return 'Giáo viên';
-        return 'Học viên';
-    }, [user?.role]);
+        if (role === 1) return t('header.admin');
+        if (role === 2) return t('header.teacher');
+        return t('header.student');
+    }, [user?.role, t]);
 
     const searchTerm = useMemo(() => {
         const params = new URLSearchParams(location.search);
@@ -51,6 +56,33 @@ function Header() {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    // Handle scroll to hide/show header
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+            const scrollThreshold = 10; // Minimum scroll distance to trigger hide/show
+
+            if (Math.abs(currentScrollY - lastScrollY) < scrollThreshold) {
+                return;
+            }
+
+            if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                // Scrolling down and past 100px
+                setIsHeaderVisible(false);
+            } else {
+                // Scrolling up or at top
+                setIsHeaderVisible(true);
+            }
+
+            setLastScrollY(currentScrollY);
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, [lastScrollY]);
     // dua tu khoa tim kiem len url trang khoa hoc.
     const handleSearchSubmit = (event) => {
         event.preventDefault();
@@ -67,35 +99,39 @@ function Header() {
     };
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md">
+        <header 
+            className={`sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md transition-transform duration-300 ease-in-out ${
+                isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+            }`}
+        >
             <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-8">
-                    <Link to="/" className="flex items-center gap-2 text-primary" aria-label="Về trang chủ">
+                    <Link to="/" className="flex items-center gap-2 text-primary" aria-label="Back to home">
                         <span className="material-symbols-outlined text-3xl font-bold">school</span>
                         <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">EduLearn</h1>
                     </Link>
                     <nav className="hidden md:flex items-center gap-6">
-                        <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">Trang chủ</Link>
-                        <Link to="/courses" className="text-sm font-medium hover:text-primary transition-colors">Khóa học</Link>
-                        <Link to="/coming-soon" className="text-sm font-medium hover:text-primary transition-colors">Danh mục</Link>
-                        <Link to="/teachers" className="text-sm font-medium hover:text-primary transition-colors">Giảng viên</Link>
+                        <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">{t('header.home')}</Link>
+                        <Link to="/courses" className="text-sm font-medium hover:text-primary transition-colors">{t('header.courses')}</Link>
+                        <Link to="/coming-soon" className="text-sm font-medium hover:text-primary transition-colors">{t('header.category')}</Link>
+                        <Link to="/teachers" className="text-sm font-medium hover:text-primary transition-colors">{t('header.teachers')}</Link>
                         {isStaff && (
                             <Link
                                 to={isAdmin ? '/admin/dashboard' : '/admin/courses'}
                                 className="text-sm font-medium text-amber-600 hover:text-amber-700 transition-colors"
                             >
-                                Quan ly
+                                {t('header.management')}
                             </Link>
                         )}
                     </nav>
                 </div>
-                <div className="flex flex-1 items-center justify-end gap-4 max-w-2xl">
+                <div className="flex flex-1 flex-nowrap items-center justify-end gap-4 max-w-2xl">
                     <form onSubmit={handleSearchSubmit} className="relative w-full max-w-sm hidden sm:block">
                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
                         <input
                             key={`${location.pathname}:${location.search}`}
                             className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-lg py-2 pl-10 pr-11 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                            placeholder="Tìm kiếm khóa học hoặc giảng viên..."
+                            placeholder={t('header.search')}
                             type="search"
                             defaultValue={searchTerm}
                             ref={searchInputRef}
@@ -103,7 +139,7 @@ function Header() {
                         <button
                             type="submit"
                             className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-primary hover:bg-primary/10 transition-colors"
-                            aria-label="Tìm kiếm khóa học"
+                            aria-label="Search courses"
                         >
                             <span className="material-symbols-outlined text-lg">arrow_forward</span>
                         </button>
@@ -124,7 +160,7 @@ function Header() {
                                 className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-slate-200 transition hover:border-primary dark:border-slate-700"
                                 aria-haspopup="menu"
                                 aria-expanded={isAccountMenuOpen}
-                                aria-label="Mở menu tài khoản"
+                                aria-label="Open account menu"
                             >
                                 <img
                                     src={user?.avatar || 'https://via.placeholder.com/80'}
@@ -142,7 +178,7 @@ function Header() {
                                             className="h-12 w-12 rounded-full object-cover"
                                         />
                                         <div className="min-w-0">
-                                            <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{user?.name || 'Học viên'}</p>
+                                            <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{user?.name || 'Student'}</p>
                                             <p className="mt-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">{accountRoleLabel}</p>
                                         </div>
                                     </div>
@@ -154,7 +190,7 @@ function Header() {
                                             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                                         >
                                             <span className="material-symbols-outlined text-[18px]">person</span>
-                                            Xem profile
+                                            {t('header.profile')}
                                         </Link>
                                         <button
                                             type="button"
@@ -162,20 +198,21 @@ function Header() {
                                             className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:hover:bg-red-950/30"
                                         >
                                             <span className="material-symbols-outlined text-[18px]">logout</span>
-                                            Đăng xuất
+                                            {t('header.logout')}
                                         </button>
                                     </div>
                                 </div>
                             )}
                         </div>
                     ) : (
-                        <div className="flex items-center gap-4">
-                            <Link to="/login" className="text-slate-600 dark:text-slate-400 hover:text-primary font-medium text-sm">Đăng nhập</Link>
-                            <Link to="/register" className="bg-amber-500 text-white px-3 py-1.5 rounded-lg hover:bg-amber-600 transition shadow-md text-sm">
-                                Đăng ký
+                        <div className="flex items-center gap-4 whitespace-nowrap">
+                            <Link to="/login" className="text-slate-600 dark:text-slate-400 hover:text-primary font-medium text-sm whitespace-nowrap">{t('header.login')}</Link>
+                            <Link to="/register" className="bg-amber-500 text-white px-3 py-1.5 rounded-lg hover:bg-amber-600 transition shadow-md text-sm whitespace-nowrap">
+                                {t('header.register')}
                             </Link>
                         </div>
                     )}
+                    <LanguageSwitcher />
                 </div>
             </div>
         </header>

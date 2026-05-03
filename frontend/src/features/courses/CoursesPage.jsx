@@ -12,7 +12,7 @@ const Courses = () => {
     const [courses] = coursesAPI.courses;
     const [user = null] = userAPI?.user || [null];
     const [currentPage, setCurrentPage] = useState(1);
-    const coursesPerPage = 12;
+    const coursesPerPage = 9;
     const searchTerm = searchParams.get('q') || '';
 
     // luu tuy chon sap xep hien tai.
@@ -20,9 +20,9 @@ const Courses = () => {
 
     // khai bao cac lua chon sap xep khoa hoc.
     const sortOptions = [
-        { value: 'price-low', label: 'Giá: Thấp đến Cao' },
-        { value: 'price-high', label: 'Giá: Cao đến Thấp' },
-        { value: 'rating', label: 'Đánh giá Cao nhất' }
+        { value: 'price-low', label: 'Price: Low to High' },
+        { value: 'price-high', label: 'Price: High to Low' },
+        { value: 'rating', label: 'Highest Rated' }
     ];
 
     // luu danh sach khoa hoc ma user da so huu.
@@ -58,16 +58,19 @@ const Courses = () => {
         }
     });
 
-    const myCourseCount = filteredCourses.filter((course) => enrolledCourseIds.has(String(course?._id || ''))).length;
+    const ownedCourses = filteredCourses.filter((course) => enrolledCourseIds.has(String(course?._id || '')));
+    const discoverCourses = filteredCourses.filter((course) => !enrolledCourseIds.has(String(course?._id || '')));
+    const myCourseCount = ownedCourses.length;
 
-    // tinh du lieu phan trang cho danh sach khoa hoc dang hien thi.
-    const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
-    const safeCurrentPage = Math.min(currentPage, Math.max(totalPages, 1));
+    // tinh du lieu phan trang rieng cho My course va Explore more.
+    const totalOwnedPages = Math.ceil(ownedCourses.length / coursesPerPage);
+    const totalDiscoverPages = Math.ceil(discoverCourses.length / coursesPerPage);
+    const totalPages = Math.max(totalOwnedPages, totalDiscoverPages, 1);
+    const safeCurrentPage = Math.min(currentPage, totalPages);
     const indexOfLastCourse = safeCurrentPage * coursesPerPage;
     const indexOfFirstCourse = indexOfLastCourse - coursesPerPage;
-    const currentCourses = filteredCourses.slice(indexOfFirstCourse, indexOfLastCourse);
-    const currentOwnedCourses = currentCourses.filter((course) => enrolledCourseIds.has(String(course?._id || '')));
-    const currentDiscoverCourses = currentCourses.filter((course) => !enrolledCourseIds.has(String(course?._id || '')));
+    const currentOwnedCourses = ownedCourses.slice(indexOfFirstCourse, indexOfLastCourse);
+    const currentDiscoverCourses = discoverCourses.slice(indexOfFirstCourse, indexOfLastCourse);
 
     // doi trang hien tai cua danh sach khoa hoc.
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
@@ -100,14 +103,14 @@ const Courses = () => {
                 <div className="container mx-auto px-4">
                     <nav aria-label="Breadcrumb" className="flex mb-4 text-xs font-medium text-slate-500">
                         <ol className="flex items-center space-x-2">
-                            <li><a className="hover:text-primary" href="/">Trang chủ</a></li>
+                            <li><a className="hover:text-primary" href="/">Home</a></li>
                             <li><span className="material-symbols-outlined text-xs">chevron_right</span></li>
-                            <li className="text-primary">Khóa học</li>
+                            <li className="text-primary">Courses</li>
                         </ol>
                     </nav>
-                    <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Khóa học của chúng tôi</h2>
+                    <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Our course</h2>
                     <p className="text-slate-600 dark:text-slate-400 mt-2">
-                        {filteredCourses.length} khóa học có sẵn • {myCourseCount} khóa học của tôi
+                        {filteredCourses.length} Courses available • {myCourseCount} Courses I'm taking
                     </p>
                 </div>
             </section>
@@ -122,7 +125,7 @@ const Courses = () => {
                                     </span>
                                     <input
                                         type="text"
-                                        placeholder="Tìm kiếm khóa học hoặc giảng viên..."
+                                        placeholder="Search courses or instructors..."
                                         value={searchTerm}
                                         onChange={(e) => handleSearchChange(e.target.value)}
                                         className="w-full pl-10 pr-10 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-primary focus:border-primary"
@@ -161,9 +164,9 @@ const Courses = () => {
                         </div>
                     </div>
                     {/* Grid */}
-                    {currentCourses.length === 0 ? (
+                    {filteredCourses.length === 0 ? (
                         <div className="text-center py-20">
-                            <p className="text-gray-500 italic">Không tìm thấy khóa học phù hợp.</p>
+                            <p className="text-gray-500 italic">No matching courses found.</p>
                         </div>
                     ) : (
                         <div className="space-y-12">
@@ -171,11 +174,11 @@ const Courses = () => {
                                 <section>
                                     <div className="mb-5 flex items-center justify-between">
                                         <div>
-                                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Khóa học của tôi</h3>
-                                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Những khóa học bạn đã sở hữu và có thể học ngay.</p>
+                                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">My course</h3>
+                                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">These are the courses you already own and can start learning right away.</p>
                                         </div>
                                         <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                                            {currentOwnedCourses.length} khóa học
+                                            {currentOwnedCourses.length} courses
                                         </span>
                                     </div>
                                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -184,7 +187,7 @@ const Courses = () => {
                                                 <div className="relative aspect-video overflow-hidden">
                                                     <img alt={course.title} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" src={course.image} />
                                                     <div className="absolute top-3 left-3 flex flex-col gap-2">
-                                                        <span className="px-2 py-1 bg-emerald-600 text-white text-[10px] font-bold uppercase rounded tracking-wider">Khóa học của tôi</span>
+                                                        <span className="px-2 py-1 bg-emerald-600 text-white text-[10px] font-bold uppercase rounded tracking-wider">My Course</span>
                                                     </div>
                                                     <button onClick={(e) => e.stopPropagation()} className="absolute top-3 right-3 p-2 bg-white/20 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <span className="material-symbols-outlined text-lg">favorite</span>
@@ -195,7 +198,7 @@ const Courses = () => {
                                                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{course.teacher}</p>
                                                     <div className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-500 dark:text-slate-400">
                                                         <span className="material-symbols-outlined text-[16px]">group</span>
-                                                        <span>{getStudentCount(course).toLocaleString()} học viên</span>
+                                                        <span>{getStudentCount(course).toLocaleString()} students</span>
                                                     </div>
                                                     <div className="flex items-center gap-2 mt-2">
                                                         <span className="text-sm font-bold text-yellow-600">{course.avgRating || 0}</span>
@@ -220,11 +223,11 @@ const Courses = () => {
                                 <section>
                                     <div className="mb-5 flex items-center justify-between">
                                         <div>
-                                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Khám phá thêm</h3>
-                                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Những khóa học bạn chưa sở hữu.</p>
+                                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Explore more</h3>
+                                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Discover courses you haven't owned yet.</p>
                                         </div>
                                         <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                                            {currentDiscoverCourses.length} khóa học
+                                            {discoverCourses.length} courses
                                         </span>
                                     </div>
                                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -244,7 +247,7 @@ const Courses = () => {
                                                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{course.teacher}</p>
                                                     <div className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-500 dark:text-slate-400">
                                                         <span className="material-symbols-outlined text-[16px]">group</span>
-                                                        <span>{getStudentCount(course).toLocaleString()} học viên</span>
+                                                        <span>{getStudentCount(course).toLocaleString()} students</span>
                                                     </div>
                                                     <div className="flex items-center gap-2 mt-2">
                                                         <span className="text-sm font-bold text-yellow-600">{course.avgRating || 0}</span>

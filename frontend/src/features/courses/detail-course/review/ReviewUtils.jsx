@@ -46,18 +46,21 @@ export const getInitials = (name) => {
         .join('')
         .toUpperCase();
 };
-    // doi thoi gian review thanh chuoi tuong doi de hien thi.
-export const formatRelativeReviewDate = (value) => {
-    if (!value) return 'Vua xong';
+
+// doi thoi gian review thanh chuoi tuong doi de hien thi.
+export const formatRelativeReviewDate = (value, locale = 'en') => {
+    if (!value) return locale.startsWith('vi') ? 'Vừa xong' : 'Just now';
 
     const diffMs = Date.now() - new Date(value).getTime();
     const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
 
-    if (diffMinutes < 60) return `${diffMinutes} phut truoc`;
-    const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours} gio truoc`;
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays} ngay truoc`;
+    const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
 
-    return `${Math.floor(diffDays / 7)} tuan truoc`;
+    if (diffMinutes < 60) return rtf.format(-diffMinutes, 'minute');
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return rtf.format(-diffHours, 'hour');
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return rtf.format(-diffDays, 'day');
+
+    return rtf.format(-Math.floor(diffDays / 7), 'week');
 };

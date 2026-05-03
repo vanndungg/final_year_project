@@ -31,6 +31,7 @@ const auth = require('../middleware/auth');
  *         description: OK
  */
 router.post('/', auth, reviewCtrl.createReview);
+router.get('/recent/list', reviewCtrl.getRecentReviews);
 
 /**
  * @swagger

@@ -3,6 +3,7 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { GlobalState } from '../../../app/providers/GlobalState';
 import axiosClient from '../../../shared/api/axiosClient';
 import { formatPercent, getCourseImage } from '../profileUtils';
@@ -13,6 +14,7 @@ const Profile = () => {
     const [token = ''] = state?.token || [''];
     const [isLogged = false] = state?.userAPI?.isLogged || [false];
     const [user = null, setUser = () => {}] = state?.userAPI?.user || [null, () => {}];
+    const { t } = useTranslation();
 
     const [avatarPreview, setAvatarPreview] = useState('');
     const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
@@ -45,9 +47,9 @@ const Profile = () => {
                 setUser((prev) => (prev ? { ...prev, avatar: nextAvatar } : prev));
             }
 
-            toast.success(res?.data?.msg || 'Cap nhat avatar thanh cong.');
+            toast.success(res?.data?.msg || t('profile.avatarUpdated'));
         } catch (error) {
-            toast.error(error.response?.data?.msg || 'Khong the cap nhat avatar.');
+            toast.error(error.response?.data?.msg || t('profile.avatarUpdateFailed'));
         } finally {
             setSavingAvatar(false);
         }
@@ -63,11 +65,11 @@ const Profile = () => {
 
         if (!file) return;
         if (!file.type.startsWith('image/')) {
-            toast.error('Vui long chon file anh hop le.');
+            toast.error(t('profile.invalidImageFile'));
             return;
         }
         if (file.size > 2 * 1024 * 1024) {
-            toast.error('Anh dai dien toi da 2MB.');
+            toast.error(t('profile.avatarSizeLimit'));
             return;
         }
 
@@ -75,7 +77,7 @@ const Profile = () => {
         reader.onload = async () => {
             const result = typeof reader.result === 'string' ? reader.result : '';
             if (!result) {
-                toast.error('Khong the doc file anh.');
+                toast.error(t('profile.avatarReadError'));
                 return;
             }
 
@@ -83,7 +85,7 @@ const Profile = () => {
             await updateAvatar(result);
         };
         reader.onerror = () => {
-            toast.error('Khong the doc file anh.');
+            toast.error(t('profile.avatarReadError'));
         };
         reader.readAsDataURL(file);
     };
@@ -123,26 +125,26 @@ const Profile = () => {
                                     className="h-full w-full object-cover"
                                 />
                                 <span className="absolute inset-x-0 bottom-0 bg-slate-900/65 px-2 py-1 text-[11px] font-bold text-white opacity-0 transition group-hover:opacity-100">
-                                    Xem anh
+                                    {t('profile.viewAvatar')}
                                 </span>
                             </button>
                             <div className="w-full max-w-xl">
-                                <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{user?.name || 'Hoc vien'}</h1>
-                                <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">{user?.email || 'email@example.com'}</p>
+                                <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{user?.name || t('profile.studentFallback')}</h1>
+                                <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">{user?.email || t('profile.emailFallback')}</p>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                             <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Enrolled</p>
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('profile.enrolled')}</p>
                                 <p className="text-2xl font-black text-blue-600">{totalEnrolled}</p>
                             </div>
                             <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Completed</p>
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('profile.completed')}</p>
                                 <p className="text-2xl font-black text-blue-600">{completedCourses}</p>
                             </div>
                             <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Average Progress</p>
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('profile.averageProgress')}</p>
                                 <p className="text-2xl font-black text-blue-600">{formatPercent(avgProgress)}</p>
                             </div>
                         </div>
@@ -151,20 +153,20 @@ const Profile = () => {
 
                 <section>
                     <div className="mb-6 flex items-center justify-between">
-                        <h2 className="text-2xl font-black text-slate-900 dark:text-white">Khoa hoc da dang ky</h2>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t('profile.enrolledCoursesTitle')}</h2>
                         {loadingProgress && (
-                            <span className="text-sm font-medium text-slate-500">Dang tai tien do...</span>
+                            <span className="text-sm font-medium text-slate-500">{t('profile.loadingProgress')}</span>
                         )}
                     </div>
 
                     {enrolledCourses.length === 0 ? (
                         <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
-                            <p className="text-slate-500 dark:text-slate-400">Ban chua dang ky khoa hoc nao.</p>
+                            <p className="text-slate-500 dark:text-slate-400">{t('profile.noCourses')}</p>
                             <Link
                                 to="/courses"
                                 className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
                             >
-                                Kham pha khoa hoc
+                                {t('profile.exploreCourses')}
                             </Link>
                         </div>
                     ) : (
@@ -191,12 +193,12 @@ const Profile = () => {
                                         </div>
 
                                         <div className="flex flex-1 flex-col p-5">
-                                            <h3 className="line-clamp-2 text-lg font-bold text-slate-900 dark:text-white">{course?.title || 'Khoa hoc'}</h3>
-                                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{course?.teacher || 'EduLearn Team'}</p>
+                                            <h3 className="line-clamp-2 text-lg font-bold text-slate-900 dark:text-white">{course?.title || t('profile.courseFallback')}</h3>
+                                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{course?.teacher || t('profile.defaultTeacher')}</p>
 
                                             <div className="mt-5">
                                                 <div className="mb-2 flex items-center justify-between">
-                                                    <span className="text-xs font-bold uppercase text-slate-500">Progress</span>
+                                                    <span className="text-xs font-bold uppercase text-slate-500">{t('profile.progress')}</span>
                                                     <span className="text-xs font-black text-blue-600">{formatPercent(progress.progressPercent)}</span>
                                                 </div>
                                                 <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700">
@@ -206,7 +208,7 @@ const Profile = () => {
                                                     />
                                                 </div>
                                                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                                                    {progress.completedCount}/{progress.totalLessons} bai hoc da hoan thanh
+                                                    {t('profile.lessonsCompleted', { completed: progress.completedCount, total: progress.totalLessons })}
                                                 </p>
                                             </div>
 
@@ -214,7 +216,7 @@ const Profile = () => {
                                                 to={`/detail/${courseId}`}
                                                 className="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700"
                                             >
-                                                Tiep tuc hoc
+                                                {t('profile.continueLearning')}
                                             </Link>
                                         </div>
                                     </article>
@@ -232,13 +234,13 @@ const Profile = () => {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="mb-4 flex items-center justify-between">
-                            <h3 className="text-lg font-black text-slate-900 dark:text-white">Anh dai dien</h3>
+                            <h3 className="text-lg font-black text-slate-900 dark:text-white">{t('profile.avatarTitle')}</h3>
                             <button
                                 type="button"
                                 onClick={() => setIsAvatarModalOpen(false)}
                                 className="rounded-lg px-2 py-1 text-sm font-semibold text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                             >
-                                Dong
+                                {t('profile.close')}
                             </button>
                         </div>
 
@@ -264,7 +266,7 @@ const Profile = () => {
                                 disabled={savingAvatar}
                                 className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
                             >
-                                {savingAvatar ? 'Dang cap nhat...' : 'Doi anh dai dien'}
+                                {savingAvatar ? t('profile.updating') : t('profile.changeAvatar')}
                             </button>
                         </div>
                     </div>

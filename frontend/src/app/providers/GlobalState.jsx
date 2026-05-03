@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import axiosClient from '../../shared/api/axiosClient';
+import i18n from '../../i18n';
 // quan ly state dung chung cho toan bo frontend.
 
 export const GlobalState = createContext();
@@ -18,6 +19,7 @@ export const DataProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [courses, setCourses] = useState([]);
     const [callback, setCallback] = useState(false);
+    const [language, setLanguage] = useState(localStorage.getItem('language') || 'en');
     const [confirmDialog, setConfirmDialog] = useState({
         isOpen: false,
         title: 'Xác nhận',
@@ -69,7 +71,15 @@ export const DataProvider = ({ children }) => {
             }
         };
         getCourses();
-    }, [callback]); 
+    }, [callback, setCourses]); 
+    
+    // Handle language change
+    const changeLanguage = (newLanguage) => {
+        i18n.changeLanguage(newLanguage);
+        setLanguage(newLanguage);
+        localStorage.setItem('language', newLanguage);
+    };
+
     const state = {
         token: [token, setToken],
         userAPI: {
@@ -81,6 +91,7 @@ export const DataProvider = ({ children }) => {
             courses: [courses, setCourses],
             callback: [callback, setCallback]
         },
+        language: [language, changeLanguage],
         confirmDialog: [confirmDialog, setConfirmDialog]
     };
 

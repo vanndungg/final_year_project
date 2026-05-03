@@ -38,13 +38,13 @@ function Login() {
                 setUserGlobal(res.data.user);
             }
             
-            toast.success("Đăng nhập thành công! 🚀");
+            toast.success("Login successful! 🚀");
             
             // chuyen ve trang chu sau khi hien thong bao.
             setTimeout(() => navigate('/'), 1000);
             
         } catch (err) {
-            const msg = err.response?.data?.msg || "Đăng nhập thất bại";
+            const msg = err.response?.data?.msg || "Login failed";
             toast.error(msg);
         }
     };
@@ -58,12 +58,12 @@ function Login() {
                             <div className="grid items-center gap-12 lg:grid-cols-2">
                                 <div className="flex flex-col gap-8">
                                     <div className="space-y-4">
-                                        <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary">Đăng nhập</span>
+                                        <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary">Login</span>
                                         <h2 className="text-4xl font-black leading-tight tracking-tight text-slate-900 dark:text-white md:text-5xl lg:text-6xl">
-                                            Chào mừng trở lại <span className="text-primary">EduLearn</span>
+                                            Welcome back <span className="text-primary">EduLearn</span>
                                         </h2>
                                         <p className="max-w-xl text-lg text-slate-600 dark:text-slate-400">
-                                            Đăng nhập để tiếp tục hành trình học tập và phát triển bản thân của bạn.
+                                            Login to continue your learning journey and personal development.
                                         </p>
                                     </div>
                                 </div>
@@ -71,7 +71,7 @@ function Login() {
                                     <div className="absolute -left-4 top-0 h-72 w-72 rounded-full bg-primary/10 blur-3xl"></div>
                                     <div className="relative overflow-hidden rounded-2xl shadow-2xl bg-white dark:bg-background-dark p-8">
                                         <h2 className="text-3xl font-extrabold text-center text-slate-900 dark:text-white mb-8">
-                                            Đăng Nhập
+                                            Login
                                         </h2>
                                         
                                         <form onSubmit={loginSubmit} className="space-y-6">
@@ -99,17 +99,17 @@ function Login() {
                                                 type="submit"
                                                 className="w-full flex justify-center py-3 px-4 rounded-lg shadow-md text-white bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all font-bold uppercase tracking-wide"
                                             >
-                                                Vào học ngay
+                                                Start learning now
                                             </button>
                                         </form>
                                         
                                         <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
-                                            Chưa có tài khoản?{' '}
+                                            Don't have an account?{' '}
                                             <Link
                                                 to="/register"
                                                 className="inline-flex items-center justify-center px-4 py-2 bg-amber-500 text-white rounded-lg font-bold hover:bg-amber-600 transition"
                                             >
-                                                Đăng ký
+                                                Register
                                             </Link>
                                         </p>
                                     </div>

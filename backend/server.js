@@ -33,7 +33,7 @@ const swaggerOptions = {
         info: {
             title: 'E-Learning API Documentation',
             version: '1.0.0',
-            description: 'Tài liệu API cho hệ thống học trực tuyến',
+            description: 'API Documentation for E-Learning System',
         },
         servers: [
             { url: 'http://localhost:5000', description: 'Local Server' },
@@ -70,14 +70,14 @@ app.use('/api/vnpay', require('./routes/vnpayRouter'));
 
 // tra thong diep kiem tra backend dang chay.
 app.get('/', (req, res) => {
-    res.send("🚀 Backend E-Learning đang hoạt động. Truy cập <a href='/api-docs'>/api-docs</a> để xem tài liệu!");
+    res.send("🚀 E-Learning Backend is running. Access <a href='/api-docs'>/api-docs</a> for documentation!");
 });
 
 // bat loi tap trung va tra ve json cho client.
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
     res.status(statusCode).json({
-        msg: err.message || "Lỗi server nội bộ",
+        msg: err.message || "Internal server error",
         stack: process.env.NODE_ENV === 'production' ? null : err.stack
     });
 });
@@ -89,13 +89,13 @@ const URI = process.env.MONGODB_URL;
 mongoose.set('strictQuery', false);
 mongoose.connect(URI)
     .then(() => {
-        console.log("✅ Đã kết nối thành công tới MongoDB");
+        console.log("✅ Successfully connected to MongoDB");
         app.listen(PORT, () => {
             console.log(`🚀 Server is running on port ${PORT}`);
             console.log(`📖 Swagger UI: http://localhost:5000/api-docs`);
         });
     })
     .catch(err => {
-        console.error("❌ Lỗi kết nối MongoDB:", err.message);
+        console.error("❌ MongoDB connection error:", err.message);
         process.exit(1);
     });
